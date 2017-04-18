@@ -14,9 +14,10 @@
 
             /*configuracion por defecto*/
             let defaults = {
-                oContainer: $(this).attr('id'),
-                oTable: null,
-                tToggleColumn: false
+                oContainer: $(this).attr('id'),                     /*Contenedor principal de datagrid*/
+                oTable: null,                                       /*id de datagrid*/
+                tToggleColumn: false,                               /*activa boton hide/show columnas*/
+                tColumns: []                                        /*almacena columnas de datagrid*/
             };
 
             let options = $.extend(defaults, opt);
@@ -171,7 +172,7 @@
                     
                     /*creando opciones para ver - ocultar*/
                     let ul = $('<ul></ul>');
-                    ul.attr('id','contvo_'+oSettings.tObjectTable);
+                    ul.attr('id','contvo_'+oSettings.oTable);
                     ul.addClass('ColVis_collection');
                     ul.attr('data-filter',dataFilter);
                     ul.css({
@@ -204,7 +205,7 @@
                         ul.append(li);
                     });
                     
-                    $('#toolbar_'+oSettings.tObjectTable).append(ul);
+                    $('#toolbar_'+oSettings.oTable).append(ul);
                 
                     ////////////
                     
