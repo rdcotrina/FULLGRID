@@ -23,16 +23,42 @@
             ul.ColVis_collection li:hover{border:1px solid #666;text-decoration:none!important;-webkit-box-shadow:1px 1px 3px #999;-moz-box-shadow:1px 1px 3px #999;-ms-box-shadow:1px 1px 3px #999;-o-box-shadow:1px 1px 3px #999;box-shadow:1px 1px 3px #999;background:#f3f3f3;background:-webkit-linear-gradient(top,#f3f3f3 0,#e2e2e2 89%,#f4f4f4 100%);background:-moz-linear-gradient(top,#f3f3f3 0,#e2e2e2 89%,#f4f4f4 100%);background:-ms-linear-gradient(top,#f3f3f3 0,#e2e2e2 89%,#f4f4f4 100%);background:-o-linear-gradient(top,#f3f3f3 0,#e2e2e2 89%,#f4f4f4 100%);background:linear-gradient(top,#f3f3f3 0,#e2e2e2 89%,#f4f4f4 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#f3f3f3', endColorstr='#f4f4f4', GradientType=0)}
             ul.ColVis_collection{padding:8px 8px 4px;margin:0;border:1px solid #ccc;border:1px solid rgba(0,0,0,.4);background-color:#f3f3f3;background-color:rgba(255,255,255,.3);overflow:hidden;z-index:2002;-webkit-border-radius:5px;-moz-border-radius:5px;-ms-border-radius:5px;-o-border-radius:5px;border-radius:5px;-webkit-box-shadow:3px 3px 5px rgba(0,0,0,.3);-moz-box-shadow:3px 3px 5px rgba(0,0,0,.3);-ms-box-shadow:3px 3px 5px rgba(0,0,0,.3);-o-box-shadow:3px 3px 5px rgba(0,0,0,.3);box-shadow:3px 3px 5px rgba(0,0,0,.3)}
             ul.ColVis_collection li{position:relative;height:auto;left:0;right:0;padding:.5em;display:block;float:none;margin-bottom:4px;-webkit-box-shadow:1px 1px 3px #999;-moz-box-shadow:1px 1px 3px #999;-ms-box-shadow:1px 1px 3px #999;-o-box-shadow:1px 1px 3px #999;box-shadow:1px 1px 3px #999;text-align:left}
+            table.fullgrid thead .sorting,table.fullgrid thead .sorting_asc,table.fullgrid thead .sorting_asc_disabled,table.fullgrid thead .sorting_desc,table.fullgrid thead .sorting_desc_disabled{cursor:pointer}
+            table.fullgrid thead>tr>th{padding-right:18px}
+            table.fullgrid th:active{outline:0}
+            table.table-bordered.fullgrid{border-collapse:separate!important}
+            table.table-bordered thead td,table.table-bordered thead th{border-left-width:0;border-top-width:0}
+            table.table-bordered tbody td,table.table-bordered tbody th{border-left-width:0;border-bottom-width:0}
+            table.table-bordered td:last-child,table.table-bordered th:last-child{border-right-width:0}
+            /*table.fullgrid tr.DTTT_selected.odd,table.fullgrid tr.DTTT_selected.odd td.sorting_1,table.fullgrid tr.DTTT_selected.odd td.sorting_2,table.fullgrid tr.DTTT_selected.odd td.sorting_3{background-color:#9FAFD1}
+            table.fullgrid tr.DTTT_selected.even,table.fullgrid tr.DTTT_selected.even td.sorting_1,table.fullgrid tr.DTTT_selected.even td.sorting_2,table.fullgrid tr.DTTT_selected.even td.sorting_3{background-color:#B0BED9}
+            */
+            table.fullgrid thead .sorting{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAgMAAAAPPt5fAAAACVBMVEUAAADIyMjl5eVIBBP/AAAAAXRSTlMAQObYZgAAAClJREFUCNdjwAYEwGQKiGDsBJFsTA5AUoJhAqZaiDhEDVg9RC/MHEwAANsMA91AQfd/AAAAAElFTkSuQmCC) no-repeat center right}
+            table.fullgrid thead .sorting_asc{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAQMAAABInqSPAAAABlBMVEUAAABVVVUT3Vn+AAAAAXRSTlMAQObYZgAAAB1JREFUCNdjwAkcgPgBAwPjBwYG5h8MDOx/GAgBAKRJBBCQbHkwAAAAAElFTkSuQmCC) no-repeat center right}
+            table.fullgrid thead .sorting_desc{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAQMAAABInqSPAAAABlBMVEUAAABVVVUT3Vn+AAAAAXRSTlMAQObYZgAAABxJREFUCNdjIATY/zAwMP9gYGD8AOQ8AGIHnEoBkNkEEEbbutQAAAAASUVORK5CYII=) no-repeat center right}
+            table.fullgrid thead .sorting_asc_disabled{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAQMAAABInqSPAAAABlBMVEUAAABUVFR8AzIeAAAAAnRSTlMAf7YpoZUAAAAdSURBVAjXY8AJHID4AQMD4wcGBuYfDAzsfxgIAQCkSQQQkGx5MAAAAABJRU5ErkJggg==) no-repeat center right}
+            table.fullgrid thead .sorting_desc_disabled{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAQMAAABInqSPAAAABlBMVEUAAABUVFR8AzIeAAAAAnRSTlMAf7YpoZUAAAAcSURBVAjXYyAE2P8wMDD/YGBg/ADkPABiB5xKAZDZBBBG27rUAAAAAElFTkSuQmCC) no-repeat center right}
+            table.fullgrid thead .sorting_asc,table.fullgrid thead .sorting_desc{background-color:#eee}
+            table.fullgrid tfoot>tr>th,table.fullgrid thead>tr>th{padding-left:9px!important}
+            table.fullgrid tfoot>tr>th input,table.fullgrid thead>tr>th input{width:100%!important;font-weight:400}
+            table.fullgrid thead>tr>th.hasinput{padding:6px!important}
+            div.fullgrids_info{padding-top:9px;font-size:13px;font-weight:700;font-style:italic;color:#969696}
+            .fullgrid thead>tr>th{border-left:none!important}
+            .fullgrid input[type=checkbox].checkbox,.fullgrid input[type=radio].radiobox{position:relative!important}
+            table.fullgrid thead>tr>th.sorting_disabled{padding-right:9px!important}
             
         </style>
     </head>
     <body>
         <div>Full Grid</div>
-
+        
+        
+        
         <div id="gdefault"></div>
         <br><br><br>
         <div id="gpagin"></div>
-        <br><br><br>        
+        <br><br><br>    
+        <button type="button" class="btn btn-default" onclick="tfull()">Full</button>
         <div id="gexcel"></div>
 
 
@@ -78,33 +104,40 @@
                 }]
         });
 
-        $('#gexcel').fullgrid({
-            tButtons: [{
-                    access: 1,
-                    title: 'Boton a',
-                    icon: 'fa fa-edit',
-                    class: 'btn btn-default',
-                    ajax: 'alert(8)'
+        var tfull = function(){
+            $('#gexcel').fullgrid({
+                tButtons: [{
+                        access: 1,
+                        title: 'Boton a',
+                        icon: 'fa fa-edit',
+                        class: 'btn btn-default',
+                        ajax: 'alert(8)'
+                    },
+                    {
+                        access: 1,
+                        title: 'Boton b',
+                        icon: 'fa fa-remove',
+                        class: 'btn btn-primary',
+                        ajax: 'alert(8)'
+                    }],
+                tToggleColumn: true,
+                sExport: {
+                    buttons: {
+                        excel: true,
+                        pdf: true
+                    }
                 },
-                {
-                    access: 1,
-                    title: 'Boton b',
-                    icon: 'fa fa-remove',
-                    class: 'btn btn-primary',
-                    ajax: 'alert(8)'
-                }],
-            tToggleColumn: true,
-            sExport: {
-                buttons: {
-                    excel: true,
-                    pdf: true
-                }
-            },
-            tColumns: [
-                {title: 'Campo 1 aaaa mmm jj', field: 'campo1'},
-                {title: 'Campo 2', field: 'campo2'}
-            ],
-        });
-
+                sCheckbox:{
+                    position: 'first'
+                },
+                tColumns: [
+                    {title: 'Campo 1', field: 'campo1',sortable:true,filter:{type:'text'}},
+                    {title: 'Campo 2', field: 'campo2',sortable:true,filter: {type:'select',compare:'campo22'}},
+                    {title: 'Campo 3', field: 'campo3',sortable:true,filter: {type:'time'}},
+                    {title: 'Campo 4', field: 'campo4',sortable:true,filter: {type:'date'}},
+                    {title: 'Campo 5', field: 'campo5',sortable:true,filter: {type:'select'}}
+                ],
+            });
+        };
     </script>
 </html>
