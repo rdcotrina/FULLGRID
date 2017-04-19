@@ -30,9 +30,6 @@
             table.table-bordered thead td,table.table-bordered thead th{border-left-width:0;border-top-width:0}
             table.table-bordered tbody td,table.table-bordered tbody th{border-left-width:0;border-bottom-width:0}
             table.table-bordered td:last-child,table.table-bordered th:last-child{border-right-width:0}
-            /*table.fullgrid tr.DTTT_selected.odd,table.fullgrid tr.DTTT_selected.odd td.sorting_1,table.fullgrid tr.DTTT_selected.odd td.sorting_2,table.fullgrid tr.DTTT_selected.odd td.sorting_3{background-color:#9FAFD1}
-            table.fullgrid tr.DTTT_selected.even,table.fullgrid tr.DTTT_selected.even td.sorting_1,table.fullgrid tr.DTTT_selected.even td.sorting_2,table.fullgrid tr.DTTT_selected.even td.sorting_3{background-color:#B0BED9}
-            */
             table.fullgrid thead .sorting{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAgMAAAAPPt5fAAAACVBMVEUAAADIyMjl5eVIBBP/AAAAAXRSTlMAQObYZgAAAClJREFUCNdjwAYEwGQKiGDsBJFsTA5AUoJhAqZaiDhEDVg9RC/MHEwAANsMA91AQfd/AAAAAElFTkSuQmCC) no-repeat center right}
             table.fullgrid thead .sorting_asc{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAQMAAABInqSPAAAABlBMVEUAAABVVVUT3Vn+AAAAAXRSTlMAQObYZgAAAB1JREFUCNdjwAkcgPgBAwPjBwYG5h8MDOx/GAgBAKRJBBCQbHkwAAAAAElFTkSuQmCC) no-repeat center right}
             table.fullgrid thead .sorting_desc{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATAQMAAABInqSPAAAABlBMVEUAAABVVVUT3Vn+AAAAAXRSTlMAQObYZgAAABxJREFUCNdjIATY/zAwMP9gYGD8AOQ8AGIHnEoBkNkEEEbbutQAAAAASUVORK5CYII=) no-repeat center right}
@@ -46,6 +43,20 @@
             .fullgrid thead>tr>th{border-left:none!important}
             .fullgrid input[type=checkbox].checkbox,.fullgrid input[type=radio].radiobox{position:relative!important}
             table.fullgrid thead>tr>th.sorting_disabled{padding-right:9px!important}
+            
+            .dt-toolbar-footer{background:#fafafa;font-size:11px;overflow:hidden;padding:5px 10px;border-top:1px solid #ccc;-webkit-box-shadow:inset 0 1px #fff;-moz-box-shadow:inset 0 1px #fff;-ms-box-shadow:inset 0 1px #fff;box-shadow:inset 0 1px #fff}
+            .dt-toolbar-footer>:first-child,.dt-toolbar>:first-child{padding-left:0!important}
+            .dt-toolbar-footer>:last-child,.dt-toolbar>:last-child{padding-right:0!important}
+            
+            .fullgrid_info{padding-top:9px;font-size:13px;font-weight:700;font-style:italic;color:#969696}
+            
+            .fullgrid_paginate{float:right;margin:0}
+            .fullgrid_paginate ul.pagination{margin:2px 0;white-space:nowrap}
+            
+            .pagination{margin:2px 0;white-space:nowrap}
+            .pagination-sm>li>a,.pagination-sm>li>span{padding:5px 10px;font-size:12px}
+            .pagination-sm>li:first-child>a,.pagination-sm>li:first-child>span{border-bottom-left-radius:2px;border-top-left-radius:2px}
+            .pagination-sm>li:last-child>a,.pagination-sm>li:last-child>span{border-bottom-right-radius:2px;border-top-right-radius:2px}
             
         </style>
     </head>
@@ -84,7 +95,8 @@
                     icon: 'fa fa-edit',
                     class: 'btn btn-danger',
                     ajax: 'alert(8)'
-                }]
+                }],
+            ajaxSource: 'php/data1.php'
         });
 
         $('#gpagin').fullgrid({
@@ -101,7 +113,8 @@
                     icon: 'fa fa-trash-o',
                     class: 'btn btn-primary',
                     ajax: 'alert(8)'
-                }]
+                }],
+            ajaxSource: 'php/data2.php'
         });
 
         var tfull = function(){
@@ -137,6 +150,10 @@
                     {title: 'Campo 4', field: 'campo4',sortable:true,filter: {type:'date'}},
                     {title: 'Campo 5', field: 'campo5',sortable:true,filter: {type:'select'}}
                 ],
+                fnServerParams: function(sData){
+                    sData.push({name:'param1',value:'parametro'});
+                },
+                ajaxSource: 'php/data3.php'
             });
         };
     </script>

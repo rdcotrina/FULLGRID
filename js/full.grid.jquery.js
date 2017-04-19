@@ -28,9 +28,10 @@
                 pPaginate: true,
                 pDisplayStart: 1,
                 pDisplayLength: 50,
-                pItemPaginas: 5,
+                pItemPaginas: 5,                                    /*determina cuantos numeros se mostraran en los items de paginacion*/
                 tViewInfo: true,
-                pOrderField: ''
+                pOrderField: '',
+                tChangeLength: true, 
             };
 
             let options = $.extend(defaults, opt);
@@ -61,6 +62,11 @@
             _private.aData = [];
 
             _private.spinner = 'img/spinner-mini.gif';
+            /*almacena el boton actualizar por cada grid*/
+            _private.htmlBtn = '';
+            /*determina que base de datos se esta usando*/
+            _private.sgbd = 'mysql';
+            
 
             /*
              * Rretorna info sobre cantidad de registros
@@ -465,6 +471,222 @@
                 
             };
             
+            /*
+             * Crea el tbody de la tabla
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.tbody = function(oSettings){
+                var tbody = $('<tbody></tbody>');
+                tbody.attr('id','tbody_'+oSettings.oTable);
+                
+                $('#' + oSettings.oTable).append(tbody);          /*se agrega <tbody> al <table>*/
+            };
+            
+            _private.selectChange = function(oSettings){
+                alert('ejecutar ajax')
+            };
+            
+            /*
+             * Crea el combo para cambiar el total de registros a visualizar or pagina
+             * @param {type} oSettings
+             * @returns {String|$}
+             */
+            _private.selectLength = function(oSettings){
+                let cbCl = '';
+                if (oSettings.tChangeLength) {
+                    cbCl = $('<div></div>');
+                    cbCl.attr('id', 'contCbLength_'+oSettings.oTable);
+                    cbCl.attr('class', 'pull-left');
+                    cbCl.css({
+                        'margin-left': '5px'
+                    });
+
+                    let span = $('<span></span>');
+
+                    let label = $('<label></label>');
+                    label.css({width: '60px'});
+
+                    let select = $('<select></select>');
+                    select.attr('id', oSettings.oTable + '_cbLength');
+                    select.attr('name', oSettings.oTable + '_cbLength');
+                    select.addClass('form-control');
+                    select.css({width: '73px'});
+                    select.change(function() {
+                        _private.selectChange(oSettings);
+                    });
+                    let op = '', lb = oSettings.tRegsLength.length,cc=0;
+                    $.each(oSettings.tRegsLength,function(l,v) {
+                        cc++;
+                        if(cc <= lb){
+                            let sel = '';
+                            if (parseInt(oSettings.pDisplayLength) === parseInt(oSettings.tRegsLength[l])) {
+                                sel = 'selected="selected"';
+                            }
+                            op += '<option value="' + oSettings.tRegsLength[l] + '" ' + sel + '>' + oSettings.tRegsLength[l] + '</option>';
+                        }
+                    });
+                    select.html(op);
+
+                    label.html(select);            /*se agrega select a label*/
+                    span.html(label);            /*se agrega label a span*/
+                    cbCl.html(span);            /*se agrega span a cbCl*/
+                }
+                return cbCl;
+            };
+            
+            /*
+             * Crea el foot de la tabla
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.tfoot = function(oSettings){
+                let df  = $('<div></div>');
+                df.attr('id','foot_'+oSettings.oTable);
+                df.attr('class','dt-toolbar-footer');
+                
+                /*===================INI IZQUIERDO===========================*/
+                let dcontlf = $('<div></div>');
+                dcontlf.attr('id','info_'+oSettings.oTable);
+                dcontlf.attr('class','col-sm-6 col-xs-12 hidden-xs');
+                
+                let dtxt = $('<div></div>');
+                dtxt.attr('class','fullgrid_info pull-left');
+                if(oSettings.tViewInfo){
+                    dtxt.html(_private.txtInfo);        /*info inicial*/
+                
+                    dcontlf.html(dtxt);
+
+                    /*combo change length*/
+                    dcontlf.append(_private.selectLength(oSettings));
+
+                    /*boton refresh*/
+                    let btnRefresh = $('<button></button>');
+                    btnRefresh.attr('id','btnRefresh_'+oSettings.oTable);
+                    btnRefresh.attr('type', 'button');
+                    btnRefresh.attr('class', 'btn btn-primary');
+                    btnRefresh.attr('title', 'Actualizar');
+                    btnRefresh.html('<i class="fa fa-refresh"></i>');
+                    btnRefresh.css({
+                        'margin-left': '18px'
+                    });
+                    dcontlf.append(btnRefresh);                
+
+                    df.append(dcontlf);   
+                }
+                /*=========================FIN IZQUIERDO====================*/
+                
+                /*===================INI DERECHO===========================*/
+                let dcontrh = $('<div></div>');
+                dcontrh.attr('id','paginate_'+oSettings.oTable);
+                dcontrh.attr('class','col-sm-6 col-xs-12');
+                
+                let dcontpag = $('<div></div>');
+                dcontpag.attr('class','fullgrid_paginate paging_simple_numbers');
+                
+                /*ul para paginacion*/
+                let ulp = $('<ul></ul>');
+                ulp.attr('class','pagination pagination-sm');
+                ulp.attr('id','ul_pagin_'+oSettings.oTable);
+                
+                dcontpag.html(ulp);
+                
+                dcontrh.html(dcontpag);
+                
+                df.append(dcontrh);
+                /*===================FIN DERECHO===========================*/
+                
+                /*agregando div a container*/
+                $('#'+oSettings.oContainer).append(df);
+            };
+                        
+            /*
+             * Inicia efecto loading en boton ACTUALIZAR
+             * @param {type} oSettings
+             * @param {type} btn
+             * @returns {undefined}
+             */
+            _private.iniLoading = function(oSettings,btn){
+                if(btn !== undefined){
+                    _private.htmlBtn = $(btn).html();
+                    $(btn).html('<img src="'+_private.spinner+'">').attr('disabled',true);
+                }else{
+                    $('#btnRefresh_'+oSettings.oTable).html('<img src="'+_private.spinner+'">').attr('disabled',true);
+                }
+            };
+            
+            /*
+             * Finaliza efecto loading en boton ACTUALIZAR
+             * @param {type} oSettings
+             * @param {type} btn
+             * @returns {undefined}
+             */
+            _private.endLoading = function(oSettings,btn){
+                if(btn !== undefined){
+                   $(btn).html(_private.htmlBtn).attr('disabled',false); 
+                }else{
+                    $('#btnRefresh_'+oSettings.oTable).html('<i class="fa fa-refresh"></i>').attr('disabled',false);
+                }
+            };  
+            
+            /*
+             * Define el limit inferior para paginacion, segun el SGBD
+             * @param {type} oSettings
+             * @returns {oSettings.pDisplayStart|oSettings.pDisplayLength}
+             */
+            _private.limitInferior = function(oSettings) {
+                var limit0 = oSettings.pDisplayStart;
+                
+                if(_private.sgbd == 'mysql'){
+                    if (oSettings.pDisplayStart > 0) {
+                        limit0 = oSettings.pDisplayLength * limit0;
+                    }
+                }
+                return limit0;
+            };
+            
+            /*
+             * Retorna data del server
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.sendAjax = function(oSettings){
+                /*inica efecto loading*/
+                _private.iniLoading(oSettings);
+                
+                let limit0 = _private.limitInferior(oSettings);
+               
+                /*Verificamos si se enviara parametros al server*/
+                if(oSettings.fnServerParams !== undefined && typeof oSettings.fnServerParams == 'function'){ oSettings.fnServerParams(_private.aData); }
+                
+                /*
+                 * Estas lineas debenser descomentadas al integrar con encripacion AES
+                 * 
+                 *  var ax = new Ajax();
+                    var filters = (oSettings.pFilterCols !== undefined)?ax.stringPost(oSettings.pFilterCols):'';
+                 */
+                
+                let filters = oSettings.pFilterCols;
+                
+                /*Enviamos datos de paginacion*/
+                _private.aData.push({name: 'pDisplayStart', value: limit0});
+                _private.aData.push({name: 'pDisplayLength', value: oSettings.pDisplayLength});
+                _private.aData.push({name: 'pOrder', value: oSettings.pOrderField});
+                _private.aData.push({name: 'pFilterCols', value: filters});
+                
+                let params = _private.serialize();
+                
+                $.ajax({
+                    type: "POST",
+                    data: params,
+                    url: oSettings.ajaxSource,
+                    dataType: 'json',
+                    success:function(data){
+                        
+                    }
+                });
+            };
+            
             /*==========================FIN PROPIEDADES Y METODOS PRIVADOS=======================*/
 
             return this.each(function () {
@@ -485,7 +707,18 @@
                         _private.table(oSettings);
                         
                         /*la cabecera*/
-                        _private.theader(oSettings);
+                        _private.theader(oSettings); //aun falta programar
+                        
+                        /*el body de la tabla*/
+                        _private.tbody(oSettings);
+                        
+                        /*el footer de la tabla*/
+                        _private.tfoot(oSettings);
+                        
+                        /*se valida se data sera via ajax*/
+                        if (oSettings.ajaxSource) {
+                            _private.sendAjax(oSettings);
+                        }
                     }
 
                 };
