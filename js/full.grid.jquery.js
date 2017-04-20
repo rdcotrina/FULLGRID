@@ -84,7 +84,7 @@
             _private.serialize = function () {
                 let data = '';
                 $.each(_private.aData, function (i, v) {
-                    data += _private.aData[i].name + '=' + _private.aData[i].value + '&';
+                    data += v.name + '=' + v.value + '&';
                 });
                 _private.aData = [];
                 data = data.substring(0, data.length - 1);
@@ -124,11 +124,11 @@
                 /*verificar si se configuro botones*/
                 if (btns.length && $.isArray(btns)) {
                     $.each(btns, function (b, v) {
-                        let access = (btns[b].access !== undefined) ? btns[b].access : 0;
-                        let titulo = (btns[b].title !== undefined) ? btns[b].title : '';
-                        let icono = (btns[b].icon !== undefined) ? btns[b].icon : '';
-                        let klass = (btns[b].class !== undefined) ? btns[b].class : 'btn btn-default';
-                        let ajax = (btns[b].ajax !== undefined) ? btns[b].ajax : '';
+                        let access = (v.access !== undefined) ? v.access : 0;
+                        let titulo = (v.title !== undefined) ? v.title : '';
+                        let icono = (v.icon !== undefined) ? v.icon : '';
+                        let klass = (v.class !== undefined) ? v.class : 'btn btn-default';
+                        let ajax = (v.ajax !== undefined) ? v.ajax : '';
 
                         /*si tiene permiso se agrega el boton*/
                         if (access) {
@@ -152,7 +152,7 @@
                 if (sExport !== 0) {
                     /*======================AGREGAR BOTON EXPORTAR EXCEL========================*/
                     if (sExport.buttons.excel && sExport.buttons.excel !== undefined) {
-                        var btnExcel = $('<button></button>');
+                        let btnExcel = $('<button></button>');
                         btnExcel.attr('type', 'button');
                         btnExcel.attr('id', 'btnEexcel_' + oSettings.oTable);
                         btnExcel.addClass('btn btn-default');
@@ -168,7 +168,7 @@
 
                     /*======================AGREGAR BOTON EXPORTAR PF========================*/
                     if (sExport.buttons.pdf && sExport.buttons.pdf !== undefined) {
-                        var btnPDF = $('<button></button>');
+                        let btnPDF = $('<button></button>');
                         btnPDF.attr('type', 'button');
                         btnPDF.addClass('btn btn-default');
                         btnPDF.attr('id', 'btnEexcel_' + oSettings.oTable);
@@ -213,8 +213,8 @@
                     });
 
                     $.each(oSettings.tColumns, function (i, v) {
-                        let title = (oSettings.tColumns[i].title !== undefined) ? oSettings.tColumns[i].title : '[field] no definido.';
-                        let field = (oSettings.tColumns[i].field !== undefined) ? oSettings.tColumns[i].field : '[field] no definido.';
+                        let title = (v.title !== undefined) ? v.title : '[field] no definido.';
+                        let field = (v.field !== undefined) ? v.field : '[field] no definido.';
 
                         let li = $('<li></li>');
                         li.html('<label><input type="checkbox" data-field="' + field + '" checked><span>' + title + '</span></label>');
@@ -265,7 +265,8 @@
                 let x = (oSettings.sAxions.width !== undefined) ? oSettings.sAxions.width : '150';
 
                 if (g.length || b.length) {
-                    let txtax = $('<th class="center"></th>');
+                    let txtax = $('<th></th>');
+                    txtax.addClass("text-center");
                     txtax.css({width: x + oSettings.tWidthFormat});
                     txtax.attr('id', oSettings.oTable + '_axions');
                     txtax.html(oSettings.tLabelAxion);
@@ -281,12 +282,12 @@
              */
             _private.headCheckbox = function (oSettings) {
                 _private.colspanRecords++;
-                var td = $('<th></th>');
+                let td = $('<th></th>');
                 td.attr('class', 'text-center');
                 td.attr('id', oSettings.oTable + '_chkall_0');
                 td.css({'width': '42px'});
 
-                var chk = $('<input></input>');
+                let chk = $('<input></input>');
                 chk.attr('type', 'checkbox');
                 chk.css({
                     'margin-left': '5px'
@@ -333,8 +334,8 @@
 
                 /*recorrido de columnas, creando <tr> para filtros*/
                 $.each(oSettings.tColumns, function (c, v) {
-                    let kfield = (oSettings.tColumns[c].field !== undefined) ? oSettings.tColumns[c].field : '';
-                    let search = (oSettings.tColumns[c].filter !== undefined) ? oSettings.tColumns[c].filter : false;   /*para activar busqueda de columnas*/
+                    let kfield = (v.field !== undefined) ? v.field : '';
+                    let search = (v.filter !== undefined) ? v.filter : false;   /*para activar busqueda de columnas*/
                     let field = (search.compare !== undefined) ? search.compare : kfield;            /*el campo q se buscara, en caso oSettings.tColumns[c].campo no sea util*/
                     let idTH = 'th_cont_search_' + oSettings.oTable + '_' + field;
 
@@ -410,14 +411,14 @@
                 $.each(oSettings.tColumns, function (c, v) {
                     let th = $('<th></th>');         /*se crea la columna*/
 
-                    let title = (oSettings.tColumns[c].title !== undefined) ? oSettings.tColumns[c].title : '';
-                    let field = (oSettings.tColumns[c].field !== undefined) ? oSettings.tColumns[c].field : '';
-                    let sortable = (oSettings.tColumns[c].sortable !== undefined && oSettings.tColumns[c].sortable) ? ' sorting' : '';
-                    let width = (oSettings.tColumns[c].width !== undefined) ? oSettings.tColumns[c].width + oSettings.tWidthFormat : '';
-                    let search = (oSettings.tColumns[c].filter !== undefined) ? oSettings.tColumns[c].filter : false;   /*para activar busqueda de columnas*/
+                    let title = (v.title !== undefined) ? v.title : '';
+                    let field = (v.field !== undefined) ? v.field : '';
+                    let sortable = (v.sortable !== undefined && v.sortable) ? ' sorting' : '';
+                    let width = (v.width !== undefined) ? v.width + oSettings.tWidthFormat : '';
+                    let search = (v.filter !== undefined) ? v.filter : false;   /*para activar busqueda de columnas*/
 
                     th.attr('id', oSettings.oTable + '_head_th_' + c);
-                    th.attr('class', 'center');        /*agregado class css*/
+                    th.attr('class', 'text-center');        /*agregado class css*/
                     th.css({width: width, 'vertical-align': 'middle'});                                          /*agregando width de columna*/
                     th.append(title);                                                 /*se agrega el titulo*/
                     th.attr('data-order', field);
@@ -433,7 +434,7 @@
                         });
                     }
                     /*verificar si se inicio ordenamiento y agegar class a th*/
-                    var cad = oSettings.pOrderField.split(' ');
+                    let cad = oSettings.pOrderField.split(' ');
 
                     if (cad[0] === field) {
                         th.removeClass(sortable);
@@ -485,7 +486,7 @@
              * @returns {undefined}
              */
             _private.tbody = function (oSettings) {
-                var tbody = $('<tbody></tbody>');
+                let tbody = $('<tbody></tbody>');
                 tbody.attr('id', 'tbody_' + oSettings.oTable);
 
                 $('#' + oSettings.oTable).append(tbody);          /*se agrega <tbody> al <table>*/
@@ -528,10 +529,10 @@
                         cc++;
                         if (cc <= lb) {
                             let sel = '';
-                            if (parseInt(oSettings.pDisplayLength) === parseInt(oSettings.tRegsLength[l])) {
+                            if (parseInt(oSettings.pDisplayLength) === parseInt(v)) {
                                 sel = 'selected="selected"';
                             }
-                            op += '<option value="' + oSettings.tRegsLength[l] + '" ' + sel + '>' + oSettings.tRegsLength[l] + '</option>';
+                            op += '<option value="' + v + '" ' + sel + '>' + v + '</option>';
                         }
                     });
                     select.html(op);
@@ -643,7 +644,7 @@
              * @returns {oSettings.pDisplayStart|oSettings.pDisplayLength}
              */
             _private.limitInferior = function (oSettings) {
-                var limit0 = oSettings.pDisplayStart;
+                let limit0 = oSettings.pDisplayStart;
 
                 if (_private.sgbd == 'mysql') {
                     if (oSettings.pDisplayStart > 0) {
@@ -660,7 +661,7 @@
              */
             _private.numeracion = function (oSettings) {
                 if (oSettings.tNumbers) {
-                    var n = 1;
+                    let n = 1;
                     _private.colspanRecords++; /*colspan para msn: no se encontraron registros*/
 
                     if (oSettings.pDisplayStart > 1) {
@@ -670,26 +671,255 @@
                     return n;
                 }
             };
-            
+
+            /*
+             * Setea desde el servidor
+             * @param {type} params
+             * @param {type} data
+             * @returns {String}
+             */
+            _private.paramServer = function (params, data) {
+                let result = ``;
+                /*validar si tiene parametros de servidor*/
+                if (params) {
+                    /*validar si es array*/
+                    if (params instanceof Object && $.isArray(params)) {
+                        /*se agrega paramtros desde array*/
+                        $.each(params, function (x, v) {
+                            result += `'${data[v]}',`;
+                        });
+                    } else {
+                        /*se agrega parametros directos*/
+                        result += `'${data[params]}',`;
+                    }
+                }
+                return result;
+            };
+
+            /*
+             * Setea parametros desde el cliente
+             * @param {type} params
+             * @returns {String}
+             */
+            _private.paramClient = function (params) {
+                let result = ``;
+                /*validar si tiene parametros de cliente*/
+                if (params) {
+                    /*validar si es array*/
+                    if (params instanceof Object && $.isArray(params)) {
+                        /*se agrega paramtros desde array*/
+                        $.each(params, function (x, v) {
+                            result += `'${v}',`;
+                        });
+                    } else {
+                        /*se agrega parametros directos*/
+                        result += `'${params}',`;
+                    }
+                }
+                return result;
+            };
+
+            /*
+             * Crea <button> o <li> para las acciones
+             * @param {type} obj.o      ... objeto grid
+             * @param {type} obj.b      ... array de bototnes
+             * @param {type} obj.tdul   ... td o ul que se esta creando
+             * @param {type} obj.t      ... si se crea <button> o <li>
+             * @param {type} obj.d      ... datos del servidor
+             * @param {type} obj.iax    ... numero de registro creado
+             * @param {type} obj.ib     ... numero de button creado
+             * @returns {undefined}
+             */
+            _private.createButtons = function (obj) {
+                //{o:oSettings, b:buttong, tdul:ulb, t:'li', d:data, iax:index, ib:i}
+                $.each(obj.b, function (i, v) {
+                    let access = (v.access !== undefined) ? v.access : 0;
+                    let titulo = (v.title !== undefined) ? v.title : '';
+                    let icono = (v.icon !== undefined) ? v.icon : '';
+                    let klass = (v.class !== undefined) ? v.class : '';
+                    let fnCallback = (v.fnCallback !== undefined) ? v.fnCallback : '';
+
+                    /*parametros para ajax*/
+                    let ajax = (v.ajax !== undefined) ? v.ajax : '';       /*ajax para <td>*/
+                    let fn = ``;
+                    let flag = '';
+                    let clientParams = '';
+                    let serverParams = '';
+                    let btn = null;
+
+                    /*verificar si tiene permiso asignado*/
+                    if (access) {
+                        if (ajax instanceof Object) {
+                            fn = (ajax.fn !== undefined) ? ajax.fn : '';                                /*funcion ajax*/
+                            flag = (ajax.flag !== undefined) ? ajax.flag : '';                          /*flag de la funcion*/
+                            clientParams = (ajax.clientParams !== undefined) ? ajax.clientParams : '';  /*parametros desde el cliente*/
+                            serverParams = (ajax.serverParams !== undefined) ? ajax.serverParams : '';  /*parametros desde el servidor*/
+
+                            /*configurando ajax*/
+                            if (fn) {
+                                let xparams = '';
+
+                                /*validar flag para agregar como parametro*/
+                                if (flag) {
+                                    xparams = flag + ',';
+                                }
+                                /*parametros de servidor*/
+                                xparams += _private.paramServer(serverParams, obj.d[obj.iax]);
+
+                                /*parametros de cliente*/
+                                xparams += _private.paramClient(clientParams);
+
+                                xparams = xparams.substring(0, xparams.length - 1);
+
+                                fn += `(this,${xparams})`;
+                            }
+
+                            switch (obj.t) {
+                                case 'btn': /*<button>*/
+                                    btn = $('<button></button>');
+                                    btn.attr('type', 'button');
+                                    btn.attr('id', 'btn_axion_' + obj.o.oTable + '_' + obj.iax);
+                                    btn.attr('title', titulo);
+                                    if (icono !== '') {
+                                        btn.html('<i class="' + icono + '"></i>');
+                                    }
+                                    /*agregando ajax*/
+                                    if (fn) {
+                                        btn.attr('onclick', fn);
+                                    }
+                                    if (klass !== '') {
+                                        btn.attr('class', klass);
+                                    }
+                                    break;
+                                case 'li': /*<li>*/
+                                    btn = $('<li></li>');
+                                    var a = $('<a></a>');
+                                    a.attr('id', 'btn_axion_' + obj.o.oTable + '_' + obj.iax + '_' + obj.ib + '_' + i);
+                                    a.attr('href', 'javascript:;');
+                                    a.html('<i class="' + icono + '"></i> ' + titulo);
+                                    /*agregando ajax*/
+                                    if (fn) {
+                                        a.attr('onclick', fn);
+                                    }
+
+                                    btn.html(a);
+                                    break;
+                            }
+
+                            /*verificar si tiene fnCallback configurado*/
+                            if (fnCallback !== undefined && fnCallback instanceof Object) {
+                                //                      indice -- data
+                                var call = fnCallback(obj.iax, obj.d[obj.iax]);       /*se ejecuta fnCallback*/
+                                if (!call) {
+                                    //call es false, <td> sigue con su contenido original
+                                } else {
+                                    switch (obj.t) {
+                                        case 'btn':
+                                            btn = call;  /*se carga return de call*/
+                                            break;
+                                        case 'li':
+                                            btn = '<li><a id="btn_axion_' + obj.o.oTable + '_' + obj.iax + '_' + obj.ib + '_' + i + '" href="javascript:;" onclick="' + fn + '">' + call + '</a></li>';  /*se carga return de call*/
+                                            break;
+                                    }
+
+                                }
+                            }
+
+                            obj.tdul.append(btn);
+                        } else {
+                            alert('[ajax] no definido.');
+                        }
+                    }
+                });
+            };
+
             /*
              * Genera los botones para las acciones
-             * @param {type} r
+             * @param {type} index                  ...indice del boton
              * @param {type} data
              * @param {type} oSettings
-             * @returns {$}
+             * @returns {td}
+             * 
+             * USO:
+             * 
+             * sAxions: {
+             group: [{
+             class: "btn btn-primary",
+             buttons: [{
+             access: 1,
+             icono: 'da fa-save',
+             title: 'Grabar',
+             class: 'btn btn-warning',
+             ajax: {
+             fn: "alerta",
+             serverParams: ["nombrecompleto", "persona"]
+             }
+             },{
+             access: 1,
+             icono: 'da fa-edit',
+             title: 'Editar',
+             class: 'btn btn-default',
+             ajax: {
+             fn: "alerta",
+             serverParams: ["nombrecompleto", "persona"]
+             }
+             }]
+             }]
+             }
              */
-            _private.axionButtons = function(index, data, oSettings){
-                let buttons = (oSettings.sAxions.buttons !== undefined)?oSettings.sAxions.buttons:[];
-                let group   = (oSettings.sAxions.group !== undefined) ? oSettings.sAxions.group : '';
-                
+            _private.axionButtons = function (index, data, oSettings) {
+                let buttons = (oSettings.sAxions.buttons !== undefined) ? oSettings.sAxions.buttons : [];
+                let group = (oSettings.sAxions.group !== undefined) ? oSettings.sAxions.group : '';
+
                 /*verificar si axiones sera grupal*/
-                if(group instanceof Object && group !== ''){
+                if (group instanceof Object && group !== '') {
                     let td = $('<td></td>');
-                    td.attr('class','text-center');
-                    
+                    td.attr('class', 'text-center');
+
+                    /*recorrido de acciones*/
+                    $.each(group, function (i, v) {
+                        let titulo = (v.titulo !== undefined) ? v.title : '<i class=\"fa fa-gear fa-lg\"></i>';  // default fa-gear
+                        let tooltip = (v.tooltip !== undefined) ? v.tooltip : oSettings.tLabelAxion;
+                        let klass = (v.class !== undefined) ? v.class : '';
+                        let buttong = (v.buttons !== undefined) ? v.buttons : [];
+
+                        /*div group*/
+                        let divg = $('<div></div>');
+                        divg.attr('class', 'btn-group');
+
+                        /*boton para group*/
+                        let btng = $('<button></button>');
+                        btng.attr('class', klass + ' dropdown-toggle');
+                        btng.attr('data-toggle', 'dropdown');
+                        btng.attr('title', tooltip);
+                        btng.html(titulo);
+                        btng.append(' <span class="caret"></span>');
+
+                        divg.append(btng);      /*se agrega <button> a <div>*/
+
+                        /*ul para botones-opcioens*/
+                        let ulb = $('<ul></ul>');
+                        ulb.attr('class', 'dropdown-menu');
+
+                        /*crea el boton*/
+                        _private.createButtons({o: oSettings, b: buttong, tdul: ulb, t: 'li', d: data, iax: index, ib: i});
+
+                        divg.append(ulb);      /*se agrega <ul> a <div>*/
+
+                        td.append(divg);            /*se agrega <div> a <td>*/
+
+                    });
+
                     return td;
-                }else{
-                    
+                } else {
+                    if (buttons.length) {
+                        var td = $('<td></td>');
+                        td.attr('class', 'text-center');
+
+                        _private.createButtons({o: oSettings, b: buttons, tdul: td, t: 'btn', d: data, iax: index, ib: null});
+
+                        return td;
+                    }
                 }
             };
 
@@ -701,39 +931,39 @@
             _private.records = function (oSettings) {
                 let data = oSettings.sData,
                         chkExist = 0;
-                
+
                 let num = _private.numeracion(oSettings);
-                
+
                 /*verificar si tiene acciones*/
                 let gBtn = (oSettings.sAxions.group !== undefined) ? oSettings.sAxions.group : [];
                 let bBtn = (oSettings.sAxions.buttons !== undefined) ? oSettings.sAxions.buttons : [];
 
-                $('#tbody_'+oSettings.oTable).find('tr').remove();        /*remover <tr> para nueva data*/
-                
+                $('#tbody_' + oSettings.oTable).find('tr').remove();        /*remover <tr> para nueva data*/
+
                 /*verificar si tiene data*/
                 if (data.length > 0) {
-                    
-                    $.each(data,function(index,value) {
-                        let tr   = $('<tr></tr>');        /*se crea el tr*/
-                        tr.attr('id','tr_'+oSettings.oTable+'_'+index);
-                        
+
+                    $.each(data, function (index, value) {
+                        let tr = $('<tr></tr>');        /*se crea el tr*/
+                        tr.attr('id', 'tr_' + oSettings.oTable + '_' + index);
+
                         /*agregando numeracion*/
-                        if(oSettings.tNumbers){
+                        if (oSettings.tNumbers) {
                             let td = $('<td></td>');         /*se crea la columna*/
-                            td.html('<b>'+(num++)+'</b>');
+                            td.html('<b>' + (num++) + '</b>');
                             td.addClass('text-center');
-                            
+
                             tr.append(td);                   /*se agrega al <tr>*/
                         }
-                        
+
                         /*agregando acciones al inicio*/
                         if (_private.positionAxion.toLowerCase() === 'first' && (gBtn.length > 0 || bBtn.length > 0)) {
                             tr.append(_private.axionButtons(index, data, oSettings));
                         }
-                        
+
                         $('#tbody_' + oSettings.oTable).append(tr);
                     });
-                    
+
                 } else {
                     let tr = $('<tr></tr>');        /*se crea el tr*/
                     let td = $('<td></td>');         /*se crea la columna*/
@@ -764,8 +994,8 @@
                 /*
                  * Estas lineas debenser descomentadas al integrar con encripacion AES
                  * 
-                 *  var ax = new Ajax();
-                 var filters = (oSettings.pFilterCols !== undefined)?ax.stringPost(oSettings.pFilterCols):'';
+                 *  let ax = new Ajax();
+                 let filters = (oSettings.pFilterCols !== undefined)?ax.stringPost(oSettings.pFilterCols):'';
                  */
 
                 let filters = oSettings.pFilterCols;
@@ -788,7 +1018,7 @@
                         if (data.length > 0 || data.error !== undefined) {
                             /*no es un array, servidor devuelve cadena, y el unico q devuelve cadena es el ERROR del SP*/
                             if (data instanceof Object === false || data.error !== undefined) {
-                                var msn = data;
+                                let msn = data;
                                 if (data.error !== undefined) {
                                     msn = data.error;
                                 }
