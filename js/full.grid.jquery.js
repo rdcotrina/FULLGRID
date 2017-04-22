@@ -26,12 +26,13 @@
                 tRegsLength: [10, 25, 50, 100],
                 sAjaxSource: null, /*url para la data via ajax*/
                 pPaginate: true,
-                pDisplayStart: 1,
+                pDisplayStart: 0,   //para mysql = 0, para sql = 1
                 pDisplayLength: 50,
                 pItemPaginas: 5, /*determina cuantos numeros se mostraran en los items de paginacion*/
                 tViewInfo: true,
                 pOrderField: '',
                 tChangeLength: true,
+                tButtons: []
             };
 
             let options = $.extend(defaults, opt);
@@ -174,7 +175,7 @@
                         let btnPDF = $('<button></button>');
                         btnPDF.attr('type', 'button');
                         btnPDF.addClass('btn btn-default');
-                        btnPDF.attr('id', 'btnEexcel_' + oSettings.oTable);
+                        btnPDF.attr('id', 'btnPDF_' + oSettings.oTable);
                         btnPDF.html('<i class="fa fa-file-pdf-o"></i> PDF');
                         btnPDF.click(function () {
                             alert('aqui pdf')
@@ -1381,6 +1382,63 @@
             };
             
             /*
+             * Crea botones ultimo y siguiente de paginacion
+             * @param {type} oSettings
+             * @param {type} pagActual
+             * @param {type} numPaginas
+             * @returns {undefined}
+             */
+            _private.liLastNext = function(oSettings, pagActual, numPaginas) {
+                /*se crea boton <li> siguiente*/
+                let liNext = $('<li></li>');
+                if (numPaginas > 1 && pagActual !== numPaginas) {
+                    liNext.attr('class', 'paginate_button next');
+                } else {
+                    liNext.attr('class', 'paginate_button next disabled');
+                }
+
+                /*se crea <a> next*/
+                let aNext = $('<a></a>');
+                aNext.attr('href', 'javascript:;');
+                aNext.html(`<i class="${_private.btnNext}"></i>`);
+                if (numPaginas > 1 && pagActual !== numPaginas) {
+                    aNext.click(function() {
+                        oSettings.pDisplayStart = pagActual + 1; //mysql pagActual
+                        //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                        //$.method.sendAjax(oSettings); FALTA
+                    });
+                }
+                $(liNext).html(aNext);                /*aNext dentro de liNext*/
+                $(`#ul_pagin_${oSettings.oTable}`).append(liNext);                  /*liNext dentro de ul*/
+
+                if (numPaginas > 1 && pagActual !== numPaginas) {
+                    oSettings.pDisplayStart = numPaginas;     /*para boton ultimo, mysql numPaginas - 1*/                    
+                }
+
+                /*se crea boton <li> ultimo*/
+                let liLast = $('<li></li>');
+
+                if (numPaginas > 1 && pagActual !== numPaginas) {
+                    liLast.attr('class', 'paginate_button next');
+                } else {
+                    liLast.attr('class', 'paginate_button next disabled');
+                }
+
+                /*se crea <a> ultimo*/
+                let aLast = $('<a></a>');
+                aLast.attr('href', 'javascript:;');
+                aLast.html(`<i class="${_private.btnLast}"></i>`);
+                if (numPaginas > 1 && pagActual !== numPaginas) {
+                    aLast.click(function() {
+                        //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                        //$.method.sendAjax(oSettings); FALTA
+                    });
+                }
+                $(liLast).html(aLast);                /*aLast dentro de liLast*/
+                $(`#ul_pagin_${oSettings.oTable}`).append(liLast);                  /*liLast dentro de ul*/
+            };
+            
+            /*
              * Crea la paginacion del dataGrid
              * @param {type} oSettings
              * @returns {undefined}
@@ -1409,7 +1467,7 @@
                 if(oSettings.pPaginate && total > 0){
                     $('#ul_pagin_'+oSettings.oTable).html('');
                     
-                    let paginaActual = start; //SUPUESTAMENTE EN MYSQL ES +1 
+                    let paginaActual = (_private.sgbd == 'sql')?start:start + 1; //SUPUESTAMENTE EN MYSQL ES +1 
                     let numPaginas = Math.ceil(total / length);     /*determinando el numero de paginas*/
                     let itemPag = Math.ceil(oSettings.pItemPaginas / 2);
                     
@@ -1433,10 +1491,50 @@
                     
                     /*====================INI UL NUMERACION ==================*/
                     _private.liFirstPrev(oSettings, paginaActual);
+                    let i = 0;
                     
+                    /*for para crear numero de paginas*/
+                    for (i = pagInicio; i <= pagFinal; i++) {
+                        if (i <= numPaginas) {
+                            /*se crea <li> para numeros de paginas*/
+                            let liNumero = $('<li></li>');
+                            /*se crea <a> anterior*/
+                            let aNumero = $('<a></a>');
+                            aNumero.attr('href', 'javascript:;');
+                            aNumero.html(i);
+
+                            if (i === paginaActual) {
+                                liNumero.attr('class', 'num paginate_button activefg');
+                                aNumero.css({
+                                    background:'#3276B1',
+                                    color: '#ffffff',
+                                    border: '1px solid #3276B1',
+                                    cursor: 'default'
+                                });
+                            } else {
+                                liNumero.attr('class', 'num paginate_button');
+                            }
+
+                            $(liNumero).html(aNumero);                /*aNumero dentro de liNumero*/
+                            $(`#ul_pagin_${oSettings.oTable}`).append(liNumero);                  /*liNumero dentro de ul*/
+                        } else {
+                            break;
+                        }
+                    }
+                    /*fin for*/
                     
+                    _private.liLastNext(oSettings, paginaActual, numPaginas);
                     /*====================FIN UL NUMERACION ==================*/
                 }
+                
+                if(!oSettings.pPaginate){
+                    /*actualizando info*/
+                    _private.iniInfo   = 1;
+                    _private.finInfo   = total;
+                    _private.totalInfo = total;
+                    $(`#info_${oSettings.oTable}`).find('div:eq(0)').html(_private.txtInfo);
+                }
+                
             };
 
             /*
@@ -1502,6 +1600,8 @@
                         /*finaliza efecto loading*/
                         _private.endLoading(oSettings);
                     }
+                }).fail( function() {
+                    //alert( 'Error!!' );
                 });
             };
 
