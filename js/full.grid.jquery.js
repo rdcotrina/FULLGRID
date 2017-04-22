@@ -39,7 +39,7 @@
             /*==========================PROPIEDADES Y METODOS PRIVADOS=======================*/
             let _private = {};
             /*css para diseño del gris*/
-            _private.cssTable = 'table table-bordered table-hover fullgrid';
+            _private.cssTable = 'table table-striped table-hover table-condensed table-bordered fullgrid';
             /*posicion de las acciones*/
             _private.positionAxion = 'first';
             /*icono del boton inicio*/
@@ -61,11 +61,14 @@
 
             _private.aData = [];
 
-            _private.spinner = 'img/spinner-mini.gif';
             /*almacena el boton actualizar por cada grid*/
             _private.htmlBtn = '';
             /*determina que base de datos se esta usando*/
             _private.sgbd = 'mysql';
+            
+            _private.totalizerColumn = [];                  /*para totalizadores de columnas*/
+            
+            _private.isTotalizer    = false;                /*activa si grid tiene totalozador o no*/
 
 
 
@@ -222,9 +225,9 @@
                             /*para ver - ocultar columnas*/
                             let dfield = $(this).data('field');
                             if ($(this).is(':checked')) {
-                                $('.col_' + dfield + oSettings.oTable).show();
+                                $(`.col_${dfield}${oSettings.oTable}`).show();
                             } else {
-                                $('.col_' + dfield + oSettings.oTable).hide();
+                                $(`.col_${dfield}${oSettings.oTable}`).hide();
                             }
                         });
                         li.find('label').attr('data-filter', dataFilter);
@@ -387,8 +390,11 @@
                 /*agregando numeracion*/
                 if (oSettings.tNumbers) {
                     let th = $('<th>Nro.</th>');         /*se crea la columna*/
-                    th.attr('class', 'center');
-                    th.css('width', '1%');
+                    th.addClass('text-center');
+                    th.css({
+                        'width': '1%',
+                        'vertical-align': 'middle'
+                    });
                     tr.append(th);                       /*se agrega al <tr>*/
                 }
 
@@ -618,9 +624,9 @@
             _private.iniLoading = function (oSettings, btn) {
                 if (btn !== undefined) {
                     _private.htmlBtn = $(btn).html();
-                    $(btn).html('<img src="' + _private.spinner + '">').attr('disabled', true);
+                    $(btn).html('<i class="fa fa-spinner fa-spin">').attr('disabled', true);
                 } else {
-                    $('#btnRefresh_' + oSettings.oTable).html('<img src="' + _private.spinner + '">').attr('disabled', true);
+                    $(`#btnRefresh_${oSettings.oTable}`).html('<i class="fa fa-spinner fa-spin">').attr('disabled', true);
                 }
             };
 
@@ -843,28 +849,29 @@
              * USO:
              * 
              * sAxions: {
-             group: [{
-             class: "btn btn-primary",
-             buttons: [{
-             access: 1,
-             icono: 'da fa-save',
-             title: 'Grabar',
-             class: 'btn btn-warning',
-             ajax: {
-             fn: "alerta",
-             serverParams: ["nombrecompleto", "persona"]
-             }
-             },{
-             access: 1,
-             icono: 'da fa-edit',
-             title: 'Editar',
-             class: 'btn btn-default',
-             ajax: {
-             fn: "alerta",
-             serverParams: ["nombrecompleto", "persona"]
-             }
-             }]
-             }]
+                width: '80',
+                group: [{
+                    class: "btn btn-primary",
+                    buttons: [{
+                            access: 1,
+                            icono: 'da fa-save',
+                            title: 'Grabar',
+                            class: 'btn btn-warning',
+                            ajax: {
+                                fn: "alerta",
+                                serverParams: ["nombrecompleto", "persona"]
+                            }
+                        },{
+                            access: 1,
+                            icono: 'da fa-edit',
+                            title: 'Editar',
+                            class: 'btn btn-default',
+                            ajax: {
+                                fn: "alerta",
+                                serverParams: ["nombrecompleto", "persona"]
+                            }
+                    }]
+                }]
              }
              */
             _private.axionButtons = function (index, data, oSettings) {
@@ -913,16 +920,260 @@
                     return td;
                 } else {
                     if (buttons.length) {
-                        var td = $('<td></td>');
+                        let td = $('<td></td>');
                         td.attr('class', 'text-center');
+                        
+                        let dbtn = $('<div/>');
+                        dbtn.addClass('btn-group');
 
-                        _private.createButtons({o: oSettings, b: buttons, tdul: td, t: 'btn', d: data, iax: index, ib: null});
+                        _private.createButtons({o: oSettings, b: buttons, tdul: dbtn, t: 'btn', d: data, iax: index, ib: null});
+                        
+                        td.append(dbtn);
 
                         return td;
                     }
                 }
             };
 
+            /*
+             * Setea values del checkbox provenientes del cliente
+             * @param {type} params
+             * @returns {String}
+             */
+            _private.valuesClient = function(params) {
+                let result = '';
+                /*validar si tiene parametros de cliente*/
+                if (params) {
+                    /*validar si es array*/
+                    if (params instanceof Object && $.isArray(params)) {
+                        /*se agrega paramtros desde array*/
+                        $.each(params,function(x,v) {
+                            result += v + "*";
+                        });
+                    } else {
+                        /*se agrega parametros directos*/
+                        result += params + "*";
+                    }
+                }
+                return result;
+            };
+            
+            /*
+             * Setea values del checkbox provenientes del servidor
+             * @param {type} params
+             * @param {type} data
+             * @returns {String}
+             */
+            _private.valuesServer = function(params, data) {
+                let result = '';
+                /*validar si tiene parametros de servidor*/
+                if (params) {
+                    /*validar si es array*/
+                    if (params instanceof Object && $.isArray(params)) {
+                        /*se agrega paramtros desde array*/
+                        $.each(params,function(x,v) {
+                            result += data[v] + "*";
+                        });
+                    } else {
+                        /*se agrega parametros directos*/
+                        result += data[params] + "*";
+                    }
+                }
+                return result;
+            };
+            
+            /*
+             * Setea values del checkbox, asignadole como atributos data-
+             * @param {type} params
+             * @param {type} data
+             * @returns {String}
+             */
+            _private.attrValuesServer = function(params, data) {
+                let result = ``;
+                /*validar si tiene parametros de servidor*/
+                if (params) {
+                    /*validar si es array*/
+                    if (params instanceof Object && $.isArray(params)) {
+                        /*se agrega paramtros desde array*/
+                            $.each(params,function(y,z) {
+                                if(data[z] !== undefined){
+                                    result += ` data-${z}="${data[z]}" `;
+                                }else{
+                                    console.log(`Field [${z}] no definido en _private.attrValuesServer().`);
+                                }
+                            });
+                    } else {
+                        /*se agrega parametros directos*/
+                        result += ` data-${params}="${data[params]}" `; 
+                    }
+                }
+                return result;
+            };
+            
+            /*
+             * Crea los checkbox de la tabla
+             * @param {type} oSettings
+             * @param {type} data
+             * @param {type} r
+             * @returns {$}
+             * sCheckbox: {
+                    serverValues: ['sexo','persona'],
+                    clientValues: ['qwerty',123],
+                    attrServerValues: ['sexso','persona'],
+                    fnCallback:function(){} 
+                },
+             */
+            _private.createCheckbox = function(oSettings, data, r) {
+                let clientValues = (oSettings.sCheckbox.clientValues !== undefined) ? oSettings.sCheckbox.clientValues : '';    /*parametros del cliente*/
+                let serverValues = (oSettings.sCheckbox.serverValues !== undefined) ? oSettings.sCheckbox.serverValues : '';    /*parametros del servidor*/
+                let attrServerValues = (oSettings.sCheckbox.attrServerValues !== undefined) ? oSettings.sCheckbox.attrServerValues : '';    /*parametros del servidor como atributos*/
+                let fnCallback = (oSettings.sCheckbox.fnCallback !== undefined) ? oSettings.sCheckbox.fnCallback : '';
+                let xvalues = '', attrValues = '';
+
+                if (clientValues !== '') {
+                    /*parametros de cliente*/
+                    xvalues += _private.valuesClient(clientValues, data[r]);
+                }
+                if (serverValues !== '') {
+                    /*parametros de servidor*/
+                    xvalues += _private.valuesServer(serverValues, data[r]);
+                }
+                xvalues = xvalues.substring(0, xvalues.length - 1);
+
+                if (attrServerValues !== '') {
+                    /*parametros de servidor como atributos*/
+                    attrValues = _private.attrValuesServer(attrServerValues, data[r]);
+                }
+                
+                let td = $('<td></td>');
+                td.attr('class', 'text-center');
+                
+                if(fnCallback === ''){
+                    td.html(`<input id="${oSettings.oTable}_chk_${r}" name="${oSettings.oTable}_chk[]" type="checkbox" value="${xvalues}" ${attrValues} class="chkG">`);
+                }else{
+                    /*verificar si tiene fnCallback configurado*/
+                    if(fnCallback !== undefined && fnCallback instanceof Object){
+                        let call = fnCallback(r,data[r]);       /*se ejecuta fnCallback*/
+                        if(!call){
+                            //call es false, <td> sigue con su contenido original
+                        }else{
+                            td.html(call);  /*se carga return de call*/
+                        }
+                    }
+                }
+                return td;
+            };
+            
+            /*
+             * Cebra de columna al ordenar
+             * @param {type} r
+             * @param {type} pOrderField
+             * @param {type} campo
+             * @returns {String}
+             */
+            _private.cebraCol = function(c, oSettings, campo, r) {
+                let m, classort;
+                m = oSettings.pOrderField.split(' ');
+                classort = '';
+                
+                /*verfificar si cplumna esta ordenada*/
+                let cssTh1 = $('#'+oSettings.oTable+'_head_th_'+c).is('.sorting_asc');
+                let cssTh2 = $('#'+oSettings.oTable+'_head_th_'+c).is('.sorting_desc');
+                
+                if(cssTh1 || cssTh2){
+                    if (campo === m[0]) {
+                        classort = ' sorting_1';
+                        if (r % 2) {
+                            classort = ' sorting_2';
+                        }
+                    }
+                }
+                
+                return classort;
+            };
+            
+            /*
+             * Suma cantidades por columna
+             * @param {type} oSettings
+             * @returns {undefined}
+             * FALTA VER COMO QUEDA CUANDO LAS ACCIONES SE MUEVAN AL FINAL
+             */
+            _private.exeTotalizer = function(oSettings){
+                let colspanTT = 0;
+                /*verificar si tiene acciones*/
+                let gBtn = (oSettings.sAxions.group !== undefined) ? oSettings.sAxions.group : [];
+                let bBtn = (oSettings.sAxions.buttons !== undefined) ? oSettings.sAxions.buttons : [];
+                
+                /*agregando numeracion*/
+                if(oSettings.tNumbers){
+                    colspanTT++;
+                }
+
+                /*agregando acciones al inicio*/
+                if (_private.positionAxion.toLowerCase() === 'first' && (gBtn.length > 0 || bBtn.length > 0)) {
+                    colspanTT++;
+                }
+
+                /*agregando checkbox al inicio*/
+                if(oSettings.sCheckbox !== undefined && oSettings.sCheckbox instanceof Object){
+                    let pos = (oSettings.sCheckbox.position !== undefined) ? oSettings.sCheckbox.position : 'first';
+                    if(pos.toLowerCase() === 'first'){    
+                        colspanTT++;
+                    }
+                }
+                
+                $('#totalizer_tab_'+oSettings.oTable).remove();        /*remover <table> para nueva data*/
+                
+                /*creando tfoot para totalizadores*/
+                let tf = $('<tfoot></tfoot>');
+                
+                /*<tr>*/
+                let trz = $('<tr></tr>');
+                
+                /*<td> para TOTAL*/
+                let tdz = $('<td></td>');
+                tdz.attr({
+                    colspan: colspanTT,
+                    class: 'text-right'
+                });
+                tdz.html('<b>Total:</b>');
+                
+                trz.append(tdz);
+                
+                /*agregar columnas dinamicas*/
+                let data = oSettings.sData;
+               
+                /*verificar q tenga data*/
+                if(data.length){
+                        /*recorrido de columnas configuradas en js*/
+                        $.each(oSettings.tColumns,function(c,v) {
+                            let td          = $('<td></td>');         /*se crea la columna*/
+                            let klass       = (v.class !== undefined) ? v.class : '';     /*clase css para <td>*/
+                            let kfield      = (v.field !== undefined) ? v.field : '[field] no definido.';
+                            let totalizer   = (v.totalizer !== undefined && v.totalizer) ? v.totalizer : false;
+
+                            
+                            
+                            if(totalizer){
+                                td.html(`<b>${_private.totalizerColumn[kfield]}</b>`);
+                            }else{
+                                td.html('&nbsp;');
+                            }
+                            
+                            td.addClass(klass);                /*agregado class css*/
+                            
+                            td.addClass(`col_${kfield}${oSettings.oTable}`); /*agregado class css*/
+
+                            trz.append(td);
+                        });
+                }
+                
+                tf.append(trz);
+                /*agregando div a container*/
+                $('#'+oSettings.oTable).append(tf);
+                
+            };
+            
             /*
              * Crea los registros del grid
              * @param {type} oSettings
@@ -960,6 +1211,100 @@
                         if (_private.positionAxion.toLowerCase() === 'first' && (gBtn.length > 0 || bBtn.length > 0)) {
                             tr.append(_private.axionButtons(index, data, oSettings));
                         }
+                        
+                        /*agregando checkbox al inicio*/
+                        if(oSettings.sCheckbox !== undefined && oSettings.sCheckbox instanceof Object){
+                            let pos = (oSettings.sCheckbox.position !== undefined) ? oSettings.sCheckbox.position : 'first';
+                            if(pos.toLowerCase() === 'first'){                        
+                                tr.append(_private.createCheckbox(oSettings, data, index));        /*se agrega al <tr>*/
+                                chkExist = 1;
+                            }
+                        }
+                        
+                        /*======================recorrido de columnas configuradas en js=========================*/
+                        $.each(oSettings.tColumns,function(c,v) {
+                            let td          = $('<td></td>');         /*se crea la columna*/
+                            let width       = (v.width !== undefined) ? v.width + oSettings.tWidthFormat : '';
+                            let valign      = (v.valign !== undefined && v.valign) ? oSettings.tColumns[c].valign : '';                    
+                            let klass       = (v.class !== undefined) ? v.class : '';     /*clase css para <td>*/
+                            let field       = (v.field !== undefined) ? data[index][v.field] : '[field] no definido.';
+                            let kfield      = (v.field !== undefined) ? v.field : '[field] no definido.';
+                            let fnCallback  = (v.fnCallback !== undefined) ? v.fnCallback : '';     /*closure css para <td>*/
+                            let totalizer   = (v.totalizer !== undefined && v.totalizer) ? v.totalizer : false;
+                            
+                            /*parametros para ajax*/
+                            let ajax        = (v.ajax !== undefined) ? v.ajax : '';       /*ajax para <td>*/
+                            let fn          = '';
+                            let flag        = '';
+                            let clientParams= '';
+                            let serverParams= '';
+                            
+                            if (ajax) {
+                                fn          = (ajax.fn !== undefined) ? ajax.fn : '';                      /*funcion ajax*/
+                                flag        = (ajax.flag !== undefined) ? ajax.flag : '';                  /*flag de la funcion*/
+                                clientParams= (ajax.clientParams !== undefined) ? ajax.clientParams : '';  /*parametros desde el cliente*/
+                                serverParams= (ajax.serverParams !== undefined) ? ajax.serverParams : '';  /*parametros desde el servidor*/
+                            }
+                            
+                            let texto = field;
+                          
+                            /*verificar si columna tendra total*/
+                            if(totalizer){
+                                _private.isTotalizer = true;
+                                if(_private.totalizerColumn[kfield] === undefined){
+                                    /*si no existe el indice del campo a totalizar, se cre el indice con el primer valor*/
+                                    _private.totalizerColumn[kfield] = parseFloat(field);
+                                }else{  
+                                    /*al existir en indice se suma*/
+                                    _private.totalizerColumn[kfield] += parseFloat(field);
+                                }
+                            }
+                            
+                            /*agregando ajax*/
+                            if (fn) {
+                                var xparams = '';
+
+                                /*validar flag para agregar como parametro*/
+                                if (flag) {
+                                    xparams = flag + ',';
+                                }
+                                /*parametros de servidor*/
+                                xparams += _private.paramServer(serverParams, data[index]);
+                                /*parametros de cliente*/
+                                xparams += _private.paramClient(clientParams);
+
+                                xparams = xparams.substring(0, xparams.length - 1);
+                                fn = fn + '(this,' + xparams + ')';
+                                texto = $('<a></a>');
+                                texto.attr('href','javascript:;');
+                                texto.html(field);
+                                texto.attr('onclick',fn);
+                            }
+                            
+                            td.html(texto);                         /*contenido original de <td>*/
+                            td.attr('class', klass);                /*agregado class css*/
+                            td.addClass(`col_${kfield}${oSettings.oTable}`);             /*para tShowHideColumn*/
+                            
+                            /*verificar si se ordena para marcar*/
+                            let classort = _private.cebraCol(c, oSettings, oSettings.tColumns[c].field,index);
+                            
+                            td.addClass(classort);
+                            td.attr({width:width});
+                            td.css({'vertical-align':valign});
+                            
+                            /*verificar si tiene fnCallback configurado*/
+                            if(fnCallback !== undefined && fnCallback instanceof Object){
+                                var call = fnCallback(index,data[index]);       /*se ejecuta fnCallback*/
+                                if(!call){
+                                    //call es false, <td> sigue con su contenido original
+                                }else{
+                                    td.html(call);  /*se carga return de call*/
+                                }
+                            }
+                            
+                            tr.append(td);                          /*se agrega al <tr>*/
+                        });
+                        /*======================fin recorrido de columnas configuradas en js=========================*/
 
                         $('#tbody_' + oSettings.oTable).append(tr);
                     });
@@ -972,6 +1317,125 @@
 
                     tr.html(td);                                    /*se agrega al <tr>*/
                     $('#tbody_' + oSettings.oTable).html(tr);
+                }
+                
+                /*ejecutar totalizadores por columna*/
+                if(_private.isTotalizer){
+                    _private.exeTotalizer(oSettings);
+                }
+            };
+            
+            /*
+             * Crea botones primero y anterior de paginacion
+             * @param {type} oSettings
+             * @param {type} pagActual
+             * @returns {undefined}
+             */
+            _private.liFirstPrev = function(oSettings, pagActual) {
+                
+                /*se crea boton <li> ptimero*/
+                let liFirst = $('<li></li>');
+
+                if (pagActual > 1) {
+                    liFirst.attr('class', 'paginate_button previous');
+                } else {
+                    liFirst.attr('class', 'paginate_button previous disabled');
+                }
+
+                /*se crea <a> primero*/
+                let aFirst = $('<a></a>');
+                aFirst.attr('href', 'javascript:;');
+                aFirst.html('<i class="'+_private.btnFirst+'"></i>');
+                if (pagActual > 1) {
+                    aFirst.click(function() {
+                        oSettings.pDisplayStart = 1;alert('pagin')
+                     //   oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                       //$.method.sendAjax(oSettings); FALTA
+                    });
+                }
+                $(liFirst).html(aFirst);                /*aFirst dentro de liFirst*/
+                $(`#ul_pagin_${oSettings.oTable}`).append(liFirst);                  /*liFirst dentro de ul*/
+
+                
+                /*se crea boton <li> anterior*/
+                let liPrev = $('<li></li>');
+                if (pagActual > 1) {
+                    liPrev.attr('class', 'paginate_button previous');
+                } else {
+                    liPrev.attr('class', 'paginate_button previous disabled');
+                }
+
+                /*se crea <a> anterior*/
+                let aPrev = $('<a></a>');
+                aPrev.attr('href', 'javascript:;');
+                aPrev.html(`<i class="${_private.btnPrev}"></i>`);
+                if (pagActual > 1) {
+                    aPrev.click(function() {alert('prev')
+                        oSettings.pDisplayStart = pagActual - 1;//mysql pagActual - 2
+                        //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                        //$.method.sendAjax(oSettings); FALTA
+                    });
+                }
+                $(liPrev).html(aPrev);                /*aPrev dentro de liPrev*/
+                $(`#ul_pagin_${oSettings.oTable}`).append(liPrev);                  /*liPrev dentro de ul*/
+            };
+            
+            /*
+             * Crea la paginacion del dataGrid
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.paginate = function(oSettings){
+                if(oSettings.sData.length === 0){ 
+                    /*agregando evento a boton actualizar*/
+                    $('#btnRefresh_' + oSettings.oTable).off('click');
+                    $('#btnRefresh_' + oSettings.oTable).click(function() {
+                        oSettings.pDisplayStart = (_private.sgbd == 'sql')?1:0;
+                        //_private.executeFilter(oSettings); FALTA      /*al actuaizar debe mandar los filtros*/
+                    });
+                    return false; 
+                }
+                
+                if(oSettings.sData[0].total === undefined){
+                    alert('Campo [total] no está definido. Revise su QUERY. El paginador no se mostrará.');
+                }
+                
+                let total  = oSettings.sData[0].total;
+                let start  = oSettings.pDisplayStart;
+                let length = oSettings.pDisplayLength;
+                let data   = (oSettings.sData !== undefined)?oSettings.sData:[];
+                
+                /*verificar si paginate esta activo*/
+                if(oSettings.pPaginate && total > 0){
+                    $('#ul_pagin_'+oSettings.oTable).html('');
+                    
+                    let paginaActual = start; //SUPUESTAMENTE EN MYSQL ES +1 
+                    let numPaginas = Math.ceil(total / length);     /*determinando el numero de paginas*/
+                    let itemPag = Math.ceil(oSettings.pItemPaginas / 2);
+                    
+                    let pagInicio = (paginaActual - itemPag);
+                    pagInicio = (pagInicio <= 0 ? 1 : pagInicio);
+                    let pagFinal  = (pagInicio + (oSettings.pItemPaginas - 1));
+                    let trIni     = ((paginaActual * length) - length) + 1;
+                    let trFin     = (paginaActual * length);
+                    
+                    let cantRreg  = trFin - (trFin - data.length);
+                    let trFinOk   = (cantRreg < length) ? (cantRreg === total) ? cantRreg : (parseInt(trFin) - (parseInt(length) - parseInt(cantRreg))) : trFin;
+                    
+                    oSettings.pDisplayStart = paginaActual;   /*para boton actualizar */ //SUPUESTAMENTE EN MYSQL ES -1
+                    
+                    /*actualizando info*/
+                    _private.iniInfo   = trIni;
+                    _private.finInfo   = trFinOk;
+                    _private.totalInfo = total;
+                    
+                    $(`#info_${oSettings.oTable}`).find('div:eq(0)').html(_private.txtInfo);
+                    
+                    /*====================INI UL NUMERACION ==================*/
+                    _private.liFirstPrev(oSettings, paginaActual);
+                    
+                    
+                    /*====================FIN UL NUMERACION ==================*/
                 }
             };
 
@@ -1031,6 +1495,9 @@
 
                         /*generar registros*/
                         _private.records(oSettings);
+                        
+                        /*generar paginacion*/ 
+                        _private.paginate(oSettings);
 
                         /*finaliza efecto loading*/
                         _private.endLoading(oSettings);
