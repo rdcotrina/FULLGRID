@@ -883,6 +883,9 @@
                 if (group instanceof Object && group !== '') {
                     let td = $('<td></td>');
                     td.attr('class', 'text-center');
+                    td.css({
+                        'vertical-align': 'middle'
+                    });
 
                     /*recorrido de acciones*/
                     $.each(group, function (i, v) {
@@ -923,6 +926,9 @@
                     if (buttons.length) {
                         let td = $('<td></td>');
                         td.attr('class', 'text-center');
+                        td.css({
+                            'vertical-align': 'middle'
+                        });
                         
                         let dbtn = $('<div/>');
                         dbtn.addClass('btn-group');
@@ -1123,10 +1129,11 @@
                     }
                 }
                 
-                $('#totalizer_tab_'+oSettings.oTable).remove();        /*remover <table> para nueva data*/
+                $(`#totalizer_tab_${oSettings.oTable}`).remove();        /*remover <table> para nueva data*/
                 
                 /*creando tfoot para totalizadores*/
                 let tf = $('<tfoot></tfoot>');
+                tf.attr('id',`totalizer_tab_${oSettings.oTable}`);
                 
                 /*<tr>*/
                 let trz = $('<tr></tr>');
@@ -1191,6 +1198,8 @@
                 let bBtn = (oSettings.sAxions.buttons !== undefined) ? oSettings.sAxions.buttons : [];
 
                 $('#tbody_' + oSettings.oTable).find('tr').remove();        /*remover <tr> para nueva data*/
+                
+                _private.totalizerColumn = [];
 
                 /*verificar si tiene data*/
                 if (data.length > 0) {
@@ -1467,7 +1476,7 @@
                 if(oSettings.pPaginate && total > 0){
                     $('#ul_pagin_'+oSettings.oTable).html('');
                     
-                    let paginaActual = (_private.sgbd == 'sql')?start:start + 1; //SUPUESTAMENTE EN MYSQL ES +1 
+                    let paginaActual = (_private.sgbd == 'sql')?start:start + 1; 
                     let numPaginas = Math.ceil(total / length);     /*determinando el numero de paginas*/
                     let itemPag = Math.ceil(oSettings.pItemPaginas / 2);
                     
@@ -1480,7 +1489,7 @@
                     let cantRreg  = trFin - (trFin - data.length);
                     let trFinOk   = (cantRreg < length) ? (cantRreg === total) ? cantRreg : (parseInt(trFin) - (parseInt(length) - parseInt(cantRreg))) : trFin;
                     
-                    oSettings.pDisplayStart = paginaActual;   /*para boton actualizar */ //SUPUESTAMENTE EN MYSQL ES -1
+                    //oSettings.pDisplayStart = paginaActual;   /*para boton actualizar */ //SUPUESTAMENTE EN MYSQL ES -1 FALTA
                     
                     /*actualizando info*/
                     _private.iniInfo   = trIni;
@@ -1533,8 +1542,34 @@
                     _private.finInfo   = total;
                     _private.totalInfo = total;
                     $(`#info_${oSettings.oTable}`).find('div:eq(0)').html(_private.txtInfo);
+                }else{
+                    /*agregando eventos para paginacion*/
+                    $(`#ul_pagin_${oSettings.oTable}`).find('li').each(function() {
+                        let n = $(this).is('.num');
+                        /*solo los numeros de pagina*/
+                        if (n) {
+                            let activo = $(this).is('.activefg');     /*numero de pagina actual*/
+                            let numero = parseInt($(this).find('a').html());
+
+                            /*evento a numeros activos*/
+                            if (!activo) {
+                                $(this).find('a').click(function() {
+                                    oSettings.pDisplayStart = (_private.sgbd == 'sql')?numero : numero - 1;
+                                    //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                                    _private.sendAjax(oSettings);
+                                });
+                            } else {
+                                /*agregando evento a boton actualizar, enviando el nuemro activo de pagina*/
+                                $(`#btnRefresh_${oSettings.oTable}`).off('click');
+                                $(`#btnRefresh_${oSettings.oTable}`).click(function() {
+                                    oSettings.pDisplayStart = (_private.sgbd == 'sql')?numero : numero - 1;                               
+                                   // _private.executeFilter(oSettings);      /*al actuaizar debe mandar los filtros*/
+                                   _private.sendAjax(oSettings);
+                                });
+                            }
+                        }
+                    });
                 }
-                
             };
 
             /*
