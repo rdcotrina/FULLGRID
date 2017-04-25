@@ -12,7 +12,7 @@
 
         <script src="js/jquery-2.0.2.min.js"></script>
         <script src="js/jquery-ui-1.10.3.min.js"></script>
-        <script src="js/full.grid.jquery.js"></script>
+        <script src="js/fullgrid.jquery.js"></script>
         <script src="libs/bootstrap/js/bootstrap.js"></script>
 
         <style>
@@ -176,7 +176,7 @@
                             return `<a href="javascript:(alert('${row.persona}'));">${row.ntipozona} fnCallback</a>`;
                         }, filter: {type: 'date'}
                     },
-                    {title: 'Activo', field: 'activo', sortable: true, filter: {type: 'select'}, totalizer: true}
+                    {title: 'Activo', field: 'activo', class: "text-center",sortable: true, filter: {type: 'select'}, totalizer: true}
                 ],
                 fnServerParams: function (sData) {
                     sData.push({name: 'param1', value: 'parametro'});
@@ -212,6 +212,9 @@
                                 }]
                         }]
                 },
+                fnCallback: function (o){
+                    alert('fnCallback en fullgrid')
+                }
             });
         };
 

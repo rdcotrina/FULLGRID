@@ -500,7 +500,10 @@
             };
 
             _private.selectChange = function (oSettings) {
-                alert('ejecutar ajax')
+                oSettings.pDisplayStart = 1;
+                oSettings.pDisplayLength = $(`#${oSettings.oTable}_cbLength`).val();
+                //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                _private.sendAjax(oSettings);
             };
 
             /*
@@ -539,7 +542,7 @@
                             if (parseInt(oSettings.pDisplayLength) === parseInt(v)) {
                                 sel = 'selected="selected"';
                             }
-                            op += '<option value="' + v + '" ' + sel + '>' + v + '</option>';
+                            op += `<option value="${v}" ${sel}>${v}</option>`;
                         }
                     });
                     select.html(op);
@@ -1355,12 +1358,13 @@
                 /*se crea <a> primero*/
                 let aFirst = $('<a></a>');
                 aFirst.attr('href', 'javascript:;');
-                aFirst.html('<i class="'+_private.btnFirst+'"></i>');
+                aFirst.html(`<i class="${_private.btnFirst}"></i>`);
                 if (pagActual > 1) {
                     aFirst.click(function() {
-                        oSettings.pDisplayStart = 1;alert('pagin')
+                        $(this).off('click');
+                        oSettings.pDisplayStart = (_private.sgbd == 'sql')?1:0;
                      //   oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
-                       //$.method.sendAjax(oSettings); FALTA
+                        _private.sendAjax(oSettings); 
                     });
                 }
                 $(liFirst).html(aFirst);                /*aFirst dentro de liFirst*/
@@ -1380,10 +1384,11 @@
                 aPrev.attr('href', 'javascript:;');
                 aPrev.html(`<i class="${_private.btnPrev}"></i>`);
                 if (pagActual > 1) {
-                    aPrev.click(function() {alert('prev')
-                        oSettings.pDisplayStart = pagActual - 1;//mysql pagActual - 2
+                    aPrev.click(function() {
+                        $(this).off('click');
+                        oSettings.pDisplayStart = (_private.sgbd == 'sql')?pagActual-1:pagActual-2;//mysql pagActual - 2
                         //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
-                        //$.method.sendAjax(oSettings); FALTA
+                        _private.sendAjax(oSettings); 
                     });
                 }
                 $(liPrev).html(aPrev);                /*aPrev dentro de liPrev*/
@@ -1412,16 +1417,17 @@
                 aNext.html(`<i class="${_private.btnNext}"></i>`);
                 if (numPaginas > 1 && pagActual !== numPaginas) {
                     aNext.click(function() {
-                        oSettings.pDisplayStart = pagActual + 1; //mysql pagActual
+                        $(this).off('click');
+                        oSettings.pDisplayStart = pagActual; //EN SQL SERVER SE DEBE CHEQUEAR ESTA LINEA, PORQUE AL PARECER ES + 1
                         //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
-                        //$.method.sendAjax(oSettings); FALTA
+                        _private.sendAjax(oSettings); 
                     });
                 }
                 $(liNext).html(aNext);                /*aNext dentro de liNext*/
                 $(`#ul_pagin_${oSettings.oTable}`).append(liNext);                  /*liNext dentro de ul*/
 
                 if (numPaginas > 1 && pagActual !== numPaginas) {
-                    oSettings.pDisplayStart = numPaginas;     /*para boton ultimo, mysql numPaginas - 1*/                    
+                    oSettings.pDisplayStart = (_private.sgbd == 'sql')?numPaginas:numPaginas-1;     /*para boton ultimo*/                    
                 }
 
                 /*se crea boton <li> ultimo*/
@@ -1439,8 +1445,9 @@
                 aLast.html(`<i class="${_private.btnLast}"></i>`);
                 if (numPaginas > 1 && pagActual !== numPaginas) {
                     aLast.click(function() {
+                        $(this).off('click');
                         //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
-                        //$.method.sendAjax(oSettings); FALTA
+                        _private.sendAjax(oSettings); 
                     });
                 }
                 $(liLast).html(aLast);                /*aLast dentro de liLast*/
@@ -1474,22 +1481,20 @@
                 
                 /*verificar si paginate esta activo*/
                 if(oSettings.pPaginate && total > 0){
-                    $('#ul_pagin_'+oSettings.oTable).html('');
+                    $(`#ul_pagin_${oSettings.oTable}`).html('');
                     
                     let paginaActual = (_private.sgbd == 'sql')?start:start + 1; 
                     let numPaginas = Math.ceil(total / length);     /*determinando el numero de paginas*/
                     let itemPag = Math.ceil(oSettings.pItemPaginas / 2);
-                    
-                    let pagInicio = (paginaActual - itemPag);
-                    pagInicio = (pagInicio <= 0 ? 1 : pagInicio);
+                 
+                    let pagInicio = (paginaActual - itemPag);  
+                    pagInicio = (pagInicio <= 0 ? 1 : pagInicio + 1); 
                     let pagFinal  = (pagInicio + (oSettings.pItemPaginas - 1));
                     let trIni     = ((paginaActual * length) - length) + 1;
                     let trFin     = (paginaActual * length);
                     
                     let cantRreg  = trFin - (trFin - data.length);
                     let trFinOk   = (cantRreg < length) ? (cantRreg === total) ? cantRreg : (parseInt(trFin) - (parseInt(length) - parseInt(cantRreg))) : trFin;
-                    
-                    //oSettings.pDisplayStart = paginaActual;   /*para boton actualizar */ //SUPUESTAMENTE EN MYSQL ES -1 FALTA
                     
                     /*actualizando info*/
                     _private.iniInfo   = trIni;
@@ -1500,8 +1505,8 @@
                     
                     /*====================INI UL NUMERACION ==================*/
                     _private.liFirstPrev(oSettings, paginaActual);
-                    let i = 0;
-                    
+                    let i;
+                 
                     /*for para crear numero de paginas*/
                     for (i = pagInicio; i <= pagFinal; i++) {
                         if (i <= numPaginas) {
@@ -1563,7 +1568,7 @@
                                 $(`#btnRefresh_${oSettings.oTable}`).off('click');
                                 $(`#btnRefresh_${oSettings.oTable}`).click(function() {
                                     oSettings.pDisplayStart = (_private.sgbd == 'sql')?numero : numero - 1;                               
-                                   // _private.executeFilter(oSettings);      /*al actuaizar debe mandar los filtros*/
+                                   // _private.executeFilter(oSettings);      /*al actuaizar debe mandar los filtros*/ FALTA
                                    _private.sendAjax(oSettings);
                                 });
                             }
@@ -1634,6 +1639,12 @@
 
                         /*finaliza efecto loading*/
                         _private.endLoading(oSettings);
+                        
+                        /*se ejecuta callback*/
+                        if (oSettings.fnCallback !== undefined && typeof oSettings.fnCallback == 'function') {//si existe callback
+                            var callback = oSettings.fnCallback;
+                            callback(oSettings);
+                        }
                     }
                 }).fail( function() {
                     //alert( 'Error!!' );
