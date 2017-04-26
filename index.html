@@ -7,13 +7,16 @@
 
         <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.css" crossorigin="anonymous">
         <link rel="stylesheet" href="libs/bootstrap/css/bootstrap-theme.css" crossorigin="anonymous">
-
+        <link rel="stylesheet" href="css/jquery-ui.css" crossorigin="anonymous">
+        <link rel="stylesheet" href="libs/clockpicker/jquery-clockpicker.css" crossorigin="anonymous">
         <link rel="stylesheet" href="libs/font-awesome/css/font-awesome.css" crossorigin="anonymous">
 
         <script src="js/jquery-2.0.2.min.js"></script>
         <script src="js/jquery-ui-1.10.3.min.js"></script>
         <script src="js/fullgrid.jquery.js"></script>
         <script src="libs/bootstrap/js/bootstrap.js"></script>
+        <script src="libs/mask/jquery.mask.min.js"></script>
+        <script src="libs/clockpicker/bootstrap-clockpicker.js"></script>
 
         <style>
             .fullgrid{ margin-bottom: 0px;}
@@ -59,10 +62,27 @@
             .pagination-sm>li>a,.pagination-sm>li>span{padding:5px 10px;font-size:12px}
             .pagination-sm>li:first-child>a,.pagination-sm>li:first-child>span{border-bottom-left-radius:2px;border-top-left-radius:2px}
             .pagination-sm>li:last-child>a,.pagination-sm>li:last-child>span{border-bottom-right-radius:2px;border-top-right-radius:2px}
-            
-            .fullgrid thead th{background: #FAFAFA;}
-           
 
+            .fullgrid thead th{background: #FAFAFA;}
+
+            table.fullgrid tr td.sorting_1 { background-color: #F2F2F2; }
+            table.fullgrid tr td.sorting_2 {background-color: #E6E6E6;}
+            
+           
+            .icon-addon{position:relative;color:#555;display:block}
+            .icon-addon:after,.icon-addon:before{display:table;content:" "}
+            .icon-addon:after{clear:both}
+            .icon-addon .glyphicon,.icon-addon.addon-md .glyphicon{position:absolute;z-index:2;left:10px;width:20px;margin-left:-2.5px;text-align:center;padding:10px 0;top:1px}
+            .icon-addon.addon-lg .form-control{line-height:1.33;height:46px;font-size:18px;padding:10px 16px 10px 40px}
+            .input-group-lg .icon-addon.addon-lg+.input-group-btn>.btn{height:46px}
+            .icon-addon.addon-sm .form-control{height:30px;padding:5px 10px 5px 28px;font-size:12px;line-height:1.5}
+            .icon-addon.addon-lg .fa,.icon-addon.addon-lg .glyphicon{font-size:18px;margin-left:0;left:11px;top:4px}
+            .icon-addon .form-control,.icon-addon.addon-md .form-control{padding-left:30px;float:left;font-weight:400}
+            .icon-addon.addon-sm .fa,.icon-addon.addon-sm .glyphicon{margin-left:0;font-size:12px;left:5px;top:-1px}
+            .icon-addon .form-control:focus+.glyphicon,.icon-addon:hover .glyphicon{color:#2580db}
+
+            
+            
         </style>
     </head>
     <body>
@@ -71,16 +91,15 @@
         <input type="text" value="parametro_input" id="txtinput">
         <button type="button" class="btn btn-default" onclick="tfull()">Full</button>
         <button type="button" class="btn btn-default" onclick="tfull2()">Full2</button>
-        
+
         <div style="width: 95%;margin: auto">
-        <div id="gexcel"></div>
+            <div id="gexcel"></div>
         </div>
-        <div id="gexcel2"></div>
-        
         <br><br>
-        <div id="gdefault"></div>
-        <br><br><br>
-        <div id="gpagin"></div>
+        <div id="gexcel2"></div>
+
+        <br><br>
+
 
 
 
@@ -88,46 +107,6 @@
     </body>
 
     <script>
-
-        $('#gdefault').fullgrid({
-            tColumns: [
-                {title: 'Campo 1', field: 'campo1'},
-                {title: 'Campo 2', field: 'campo2'}
-            ],
-            tButtons: [{
-                    access: 1,
-                    title: 'Boton 1',
-                    icon: 'fa fa-edit',
-                    class: 'btn btn-default',
-                    ajax: 'alert(8)'
-                },
-                {
-                    access: 1,
-                    title: 'Boton 2',
-                    icon: 'fa fa-edit',
-                    class: 'btn btn-danger',
-                    ajax: 'alert(8)'
-                }],
-            ajaxSource: 'php/data1.php'
-        });
-
-        $('#gpagin').fullgrid({
-            tButtons: [{
-                    access: 1,
-                    title: 'Boton 11',
-                    icon: 'fa fa-edit',
-                    class: 'btn btn-default',
-                    ajax: 'alert(8)'
-                },
-                {
-                    access: 1,
-                    title: 'Boton 22',
-                    icon: 'fa fa-trash-o',
-                    class: 'btn btn-primary',
-                    ajax: 'alert(8)'
-                }],
-            ajaxSource: 'php/data2.php'
-        });
 
         var tfull = function () {
             $('#gexcel').fullgrid({
@@ -145,6 +124,8 @@
                         class: 'btn btn-primary',
                         ajax: 'alert(8)'
                     }],
+                pOrderField: 'nombrecompleto asc',
+                tRegsLength: [5, 10, 25, 50, 100],
                 tToggleColumn: true,
                 pDisplayLength: 5,
                 sExport: {
@@ -155,9 +136,9 @@
                 },
                 sCheckbox: {
                     serverValues: ['sexo', 'persona'],
-                    clientValues: ['qwerty', 123],
+                    clientValues: ['qwerty', $('#txtinput').val()],
                     attrServerValues: ['sexo', 'persona'],
-                    fnCallback: function (i, row) {
+                    fnReplace: function (i, row) {
                         return '<input id="_chk_' + i + '" name="_chk[]" type="checkbox" value="' + row.sexo + '" class="chkG"> ..';
                     }
                 },
@@ -170,13 +151,19 @@
                         },
                         filter: {type: 'text'}},
                     {title: 'Sexo', field: 'sexo', sortable: true, class: "text-center", filter: {type: 'select', compare: 'sexo'}},
-                    {title: 'Fecha Nac.', field: 'fechanacimiento', sortable: true, filter: {type: 'time'}},
+                    {title: 'Fecha Nac.', field: 'fechanacimiento', sortable: true, filter: {type: 'date'}},
                     {title: 'Zona', field: 'ntipozona', sortable: true,
-                        fnCallback: function (i, row) {
-                            return `<a href="javascript:(alert('${row.persona}'));">${row.ntipozona} fnCallback</a>`;
-                        }, filter: {type: 'date'}
+                        fnReplace: function (i, row) {
+                            return `<a href="javascript:(alert('${row.persona}'));">${row.ntipozona} fnReplace</a>`;
+                        }, filter: {type: 'time'}
                     },
-                    {title: 'Activo', field: 'activo', class: "text-center",sortable: true, filter: {type: 'select'}, totalizer: true}
+                    {title: 'Activo', field: 'activo', class: "text-center", sortable: true, totalizer: true,
+                        filter: {
+                            type: "select",
+                            dataClient: [{etiqueta: "Activo", value: "1"}, {etiqueta: "Inactivo", value: "0"}],
+                            options: {label: "etiqueta", value: "value"}
+                        }
+                    }
                 ],
                 fnServerParams: function (sData) {
                     sData.push({name: 'param1', value: 'parametro'});
@@ -206,14 +193,14 @@
                                         serverParams: ["nombrecompleto", "persona"],
                                         clientParams: [$('#txtinput').val(), "parametro_fijo"]
                                     },
-                                    fnCallback: function (i, row) {
+                                    fnReplace: function (i, row) {
                                         return '<i class="fa fa-edit"></i> se manipulo boton en [ul]';
                                     }
                                 }]
                         }]
                 },
-                fnCallback: function (o){
-                    alert('fnCallback en fullgrid')
+                fnCallback: function (o) {
+                    //alert('fnCallback en fullgrid')
                 }
             });
         };

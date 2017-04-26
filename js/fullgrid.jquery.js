@@ -70,7 +70,12 @@
             _private.totalizerColumn = [];                  /*para totalizadores de columnas*/
             
             _private.isTotalizer    = false;                /*activa si grid tiene totalozador o no*/
-
+            //pra manejo de los css de sortable
+            _private.thTMP = null;
+            /*almacena los campos, para ocultar los filtros de cada columna*/
+            _private.fieldsHide = [];
+            /*almacena los datos de un <select> via ajax o cliente*/
+            _private.dataSelect = [];
 
 
             /*
@@ -376,6 +381,563 @@
             };
 
             /*
+             * Retorna operador para el query   
+             * @param {type} o
+             * @returns {fullgrid.jqueryL#7.fullgrid.jqueryAnonym$0.fullgrid._private.operator.fullgrid.jqueryAnonym$8}
+             */
+            _private.operator = function(o) {
+                var com1 = '', com2 = '', op = o;
+                /*si operator es LIKE se agrea comodin % */
+                if (o.toLowerCase() === 'like') {
+                    com1 = '*';  /*este sera el comodin*/
+                    com2 = '*';  /*este sera el comodin*/
+                } else if (o.toLowerCase() === 'c') {/*compienza por*/
+                    op = 'LIKE';
+                    com2 = '*';  /*este sera el comodin*/
+                } else if (o.toLowerCase() === 't') {/*termina por*/
+                    op = 'LIKE';
+                    com1 = '*';  /*este sera el comodin*/
+                }
+                return {a: com1, b: com2, c: op};
+            };
+            
+            /*
+             * Prepara linea para el query
+             * @param {type} oSettings
+             * @returns {String}
+             */
+            _private.prepareFilters = function(oSettings){
+                let searchTxt = '';
+                $('#' + oSettings.oTable).find('thead').find('tr:eq(1)').find('th').each(function() {
+                    let filter1 = $(this).find('div:eq(0)').find('input, select');
+                    let field = filter1.attr('field');
+                    
+                    if(field !== undefined){
+                        let div2 = $(this).find(`#cont_filter_${oSettings.oTable}_${field}`);
+                        
+                        let operator1 = div2.find('.operador1').val();
+                        let operator2 = div2.find('.operador2').val();
+                        let operator3 = div2.find('.operador3').val();
+                        let filter2   = div2.find('.filter2').val();
+                        let campo = field;
+                       
+                        /* = <> > >= < <= C T LIKE */
+                        /*valor de primer filtro tiene contenido*/
+                        if (filter1.val() !== '') {
+                            let oA = _private.operator(operator1);
+                            /*verificar si hay AND o OR*/
+                            if (filter2 !== '') {
+                                let oB = _private.operator(operator3);
+
+                                searchTxt += ` AND (${campo} ${oA.c} "${oA.a} ${filter1.val()} ${oA.b}" ${operator2} ${campo} ${oB.c} "${oB.a} ${filter2} ${oB.b}")`;
+                            } else {
+                                searchTxt += ` AND ${campo} ${oA.c} "${oA.a} ${filter1.val()} ${oA.b} "`;
+                            }
+                        }
+                    }
+                    $(this).find('.main-filter').css({display: 'none'});
+                });
+                return searchTxt;
+            };
+            
+            /*
+             * Ejecuta la ordenacion por columnas
+             * @param {type} tthis
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.executeSorting = function(t,oSettings){
+                let thId = $(t).attr('id'),
+                    orienta,
+                    pag;
+                oSettings.pOrderField = $(t).data('order');
+            
+                if(_private.thTMP != thId){
+                    /*a todos los <th> del primer <tr> que tengan los css .sorting_asc y .sorting_desc les agreso el css .sorting*/
+                    $('#' + oSettings.oTable).find('thead').find('tr:nth-child(1)').find('.sorting_asc').addClass('sorting');
+                    $('#' + oSettings.oTable).find('thead').find('tr:nth-child(1)').find('.sorting_desc').addClass('sorting');
+
+                    /*a todos los <th> del primer <tr> les remuevo los css .sorting_asc y .sorting_desc*/
+                    $('#' + oSettings.oTable).find('thead').find('tr:nth-child(1)').find('th').removeClass('sorting_asc');
+                    $('#' + oSettings.oTable).find('thead').find('tr:nth-child(1)').find('th').removeClass('sorting_desc');
+                }    
+        
+                if ($(t).hasClass('sorting')) {                /*ordenacion ascendente*/
+                    $(t).removeClass('sorting');
+                    $(t).addClass('sorting_asc');
+                    orienta = ' ASC';
+                }else if ($(t).hasClass('sorting_asc')) {      /*ordenacion ascendente*/
+                    $(t).removeClass('sorting_asc');
+                    $(t).addClass('sorting_desc');
+                    orienta = ' DESC';
+                }else if ($(t).hasClass('sorting_desc')) {     /*sin ordenacion*/
+                    $(t).removeClass('sorting_desc');
+                    $(t).addClass('sorting');
+                    orienta = ' ';
+                    oSettings.pOrderField = '';
+                } 
+                
+                _private.thTMP = thId;
+                
+                pag = parseInt($('#paginate_' + oSettings.oTable).find('ul.pagination').find('li.activerd').find('a').html());
+                oSettings.pOrderField += orienta;
+                oSettings.pDisplayLength = $('#' + oSettings.oTable + '_cbLength').val();  /*tomo el valor del combo para los registros a mostrar*/
+                oSettings.pDisplayStart =  (_private.sgbd == 'sql')?pag:pag-1;
+                oSettings.pDisplayStart = (isNaN(oSettings.pDisplayStart))?(_private.sgbd == 'sql')?1:0 :oSettings.pDisplayStart;
+                oSettings.pFilterCols = _private.prepareFilters(oSettings);
+                
+                _private.sendAjax(oSettings);
+            };
+            
+            /*
+             * Ejecuta la busqueda mediante los filtros
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.executeFilter = function(oSettings){
+                oSettings.pFilterCols = _private.prepareFilters(oSettings);
+                oSettings.pDisplayStart = 1;//cuando esta en l pagina 2 no funciona la busqueda, pagina debe estar en la 1
+                _private.sendAjax(oSettings);
+            };
+            
+            /*
+             * Limpia la busqueda, reset
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.clearFilter = function(oSettings,idCont){
+                $('#'+idCont).parent('th').find('input:text, select').val('');
+                oSettings.pFilterCols = _private.prepareFilters(oSettings);
+                oSettings.pDisplayStart = (_private.sgbd == 'sql')?1:0;
+                _private.sendAjax(oSettings);
+            };
+            
+            /*
+             * Crea los filtros y condiciones q se visualizaran al pulsar el icono: FILTRO
+             * @param {type} field
+             * @param {type} oSettings
+             * @param {type} tipo
+             * @returns {undefined}
+             */
+            _private.addFilters = function(field,oSettings,tipo,operator){
+                let idCont = `cont_filter_${oSettings.oTable}_${field}`;
+                let divF = $('<div></div>');
+                divF.attr('data-filter',field);
+                divF.attr('class','well well-sm main-filter');
+                divF.css({
+                    'display': 'none',
+                    'position': 'absolute',
+                    'right': '6px',
+                    'z-index':5
+                });
+                divF.attr('id',idCont);
+                
+                /*agregar texto 1*/
+                let txt1 = $('<p></p>');
+                txt1.attr('data-filter',field);
+                txt1.html('Mostrar&nbsp;registros&nbsp;que&nbsp;sean:');
+                
+                divF.append(txt1);
+                
+                /*agregar primer <select> de operadores 1*/
+                let operator1 = $('<select></select>');
+                operator1.attr('id',`op1_${oSettings.oTable}_${field}`);
+                operator1.attr('data-filter',field);
+                operator1.attr('class','form-control operador1');
+                operator1.html('<option value="LIKE" '+((operator == 'LIKE')?'selected="selected"':'')+'>Contiene</option><option value="=" '+((operator == '=')?'selected="selected"':'')+'>Igual</option><option value="!=" '+((operator == '!=')?'selected="selected"':'')+'>Diferente</option><option value=">" '+((operator == '>')?'selected="selected"':'')+'>Mayor</option><option value=">=" '+((operator == '>=')?'selected="selected"':'')+'>Mayor o igual</option><option value="<" '+((operator == '<')?'selected="selected"':'')+'>Menor</option><option value="<=" '+((operator == '<=')?'selected="selected"':'')+'>Menor o igual</option><option value="C" '+((operator == 'C')?'selected="selected"':'')+'>Comienza</option><option value="T" '+((operator == 'T')?'selected="selected"':'')+'>Termina</option>');
+                operator1.find('option').attr('data-filter',field);
+                divF.append(operator1);
+                
+                /*combo con operadores 2 AND, OR*/
+                let operator2 = $('<select></select>');
+                operator2.attr('id',`op2_${oSettings.oTable}_${field}`);
+                operator2.attr('data-filter',field);
+                operator2.attr('class', 'form-control operador2');
+                operator2.css({'margin-top': '5px', 'margin-bottom': '5px', width: '80px'});
+                operator2.html('<option value="AND">AND</option><option value="OR">OR</option>');
+                operator2.find('option').attr('data-filter',field);
+                divF.append(operator2);
+                
+                /*agregar primer <select> de operadores 3*/
+                let operator3 = $('<select></select>');
+                operator3.attr('id',`op3_${oSettings.oTable}_${field}`);
+                operator3.attr('data-filter',field);
+                operator3.attr('class','form-control operador3');
+                operator3.css({'margin-bottom':'5px'});
+                operator3.html('<option value="LIKE" '+((operator == 'LIKE')?'selected="selected"':'')+'>Contiene</option><option value="=" '+((operator == '=')?'selected="selected"':'')+'>Igual</option><option value="!=" '+((operator == '!=')?'selected="selected"':'')+'>Diferente</option><option value=">" '+((operator == '>')?'selected="selected"':'')+'>Mayor</option><option value=">=" '+((operator == '>=')?'selected="selected"':'')+'>Mayor o igual</option><option value="<" '+((operator == '<')?'selected="selected"':'')+'>Menor</option><option value="<=" '+((operator == '<=')?'selected="selected"':'')+'>Menor o igual</option><option value="C" '+((operator == 'C')?'selected="selected"':'')+'>Comienza</option><option value="T" '+((operator == 'T')?'selected="selected"':'')+'>Termina</option>');
+                operator3.find('option').attr('data-filter',field);
+                divF.append(operator3);
+                
+                /*agregando filtro dos*/
+                let filter2 = null, cont, icon; 
+                
+                switch (tipo.toLowerCase()) {
+                    case 'text':                            /*se crea input:text*/
+                        filter2 = $('<input></input>');
+                        filter2.attr('type','text');
+                        filter2.addClass('form-control filter2');
+
+                        break;
+                    case 'date':                            /*se crea input:text, con datepicker*/
+                        filter2 = $('<input></input>');
+                        filter2.addClass('datepickerGrid');
+                        filter2.attr('type','text');
+                        filter2.addClass('form-control filter2');
+
+                        icon = $('<label></label>');
+                        icon.attr('for',field);
+                        icon.attr('data-filter',field);
+                        icon.attr('class','glyphicon glyphicon-calendar');
+
+                        cont = $('<div></div>');
+                        cont.addClass('icon-addon addon-md');                      /*para los iconos*/
+                        cont.attr('data-filter',field);
+                        cont.html(filter2);
+                        cont.append(icon);
+
+                        filter2 = cont;
+                        break;
+                    case 'time':                        /*se crea input:text, con clockpicker*/
+                        filter2 = $('<input></input>');
+                        filter2.addClass('timepickerGrid');
+                        filter2.attr('data-filter',field);
+                        filter2.attr('type','text');
+                        filter2.addClass('form-control filter2');
+
+                        icon = $('<label></label>');
+                        icon.attr('for',field);
+                        icon.attr('data-filter',field);
+                        icon.attr('class','glyphicon glyphicon-time');
+
+                        cont = $('<div></div>');
+                        cont.addClass('icon-addon addon-md');                      /*para los iconos*/
+                        cont.attr('data-filter',field);
+                        cont.html(filter2);
+                        cont.append(icon);
+
+                        filter2 = cont;
+                        break;
+                    case 'select': 
+                        filter2 = $('<select></select>');
+
+                        /*options*/
+                        var opt = $('<option></option>');
+                        opt.attr('value', '');
+                        opt.html('-Seleccionar-');
+
+                        filter2.append(opt);
+                        filter2.addClass('form-control filter2');
+
+                        let dataClient = '';
+                        $.each(_private.dataSelect,function(t,v){
+                            $.each(_private.dataSelect[t],function(g,vv){
+                                if(oSettings.oTable+'_'+field === g){
+                                    dataClient = _private.dataSelect[t][g];
+                                }
+                            });
+                        });
+
+                        filter2.append(dataClient);
+                        break;
+                }
+                filter2.attr('id',`f2_${oSettings.tObjectTable}_${field}`);
+                filter2.attr('data-filter',field);
+                
+                divF.append(filter2);
+                
+                /*botones filtrar y cerrar*/
+                let cntBtn = $('<div></div>');
+                cntBtn.attr('data-filter',field);
+                cntBtn.css({'margin-top': '5px'});
+                
+                let btnFilter = $('<button></button>');
+                btnFilter.attr('type','button');
+                btnFilter.attr('class','btn btn-default');
+                btnFilter.attr('data-filter',field);
+                btnFilter.css({float: 'left'});
+                btnFilter.html('<i class="fa fa-search"></i> Filtrar');
+                btnFilter.click(function(){
+                    _private.executeFilter(oSettings);
+                });
+                
+                cntBtn.append(btnFilter);
+                
+                let btnClose = $('<button></button>');
+                btnClose.attr('type','button');
+                btnClose.attr('class','btn btn-default');
+                btnClose.attr('data-filter',field);
+                btnClose.css({float: 'right'});
+                btnClose.html('<i class="fa fa-trash-o"></i> Limpiar');
+                btnClose.click(function(){
+                    $("#"+idCont).css({display:"none"});
+                    _private.clearFilter(oSettings,idCont);
+                });
+                
+                cntBtn.append(btnClose);
+                
+                divF.append(cntBtn);
+                
+                $(`#th_cont_search_${oSettings.oTable}_${field}`).append(divF);
+            };
+            
+            /*
+             * Crea icono filtro en cada <th>
+             * @param {type} idTH   --  id del <th> de cada filtro en el <thead>
+             * @returns {undefined}
+             */
+            _private.addIconFilter = function(field,oSettings,tipo,operator){
+                var sp = $('<span></span>');
+                sp.attr('class','input-group-addon');
+                sp.attr('data-filter',field);
+                sp.attr('onclick',`$("#cont_filter_${oSettings.oTable}_${field}").toggle();`);
+                
+                var ii = $('<i></i>');
+                ii.attr('data-filter',field);
+                ii.css({cursor: 'pointer'});
+                ii.attr('class','glyphicon glyphicon-filter');
+                
+                sp.html(ii);
+                $(`#th_cont_search_${oSettings.oTable}_${field}`).find('div:eq(0)').append(sp);
+                
+                /*insertar capa con condicionales*/
+                _private.addFilters(field,oSettings,tipo,operator);
+            };
+            
+            /*
+             * Crea los elementos para los filtros
+             * @param {type} oSettings
+             * @returns {undefined}
+             */
+            _private.addSearchCols = function(oSettings){
+                /*recorrido de columnas, creando los filtros*/
+                $.each(oSettings.tColumns,function(c,v) {
+                    let elementSearch = null;                          /*el filtro*/
+                    let cont,idTH;
+                    let kfield = (v.field !== undefined) ? v.field : '';
+                    let search = (v.filter !== undefined) ? v.filter : false;   /*para activar busqueda de columnas*/
+                    
+                    /*verificar si se configuro la busqueda*/
+                    if (search instanceof Object && search !== false) {
+                        let tipo    = (search.type !== undefined) ? search.type : 'text';                  /*tipo de elemento*/
+                        let field   = (search.compare !== undefined) ? search.compare : kfield;            /*el campo q se buscara, en caso oSettings.tColumns[c].campo no sea util*/
+                        let idField = `input_search_${oSettings.oTable}_${field}`;
+                        let operator= (search.operator !== undefined) ? search.operator : 'LIKE';
+                        let icon    = null;           /*para el icono del field*/
+                        
+                        _private.fieldsHide.push(field);                          /*para ocultar filtros al dar click en document*/
+                        
+                        /*id del <th>*/
+                        idTH    = `th_cont_search_${oSettings.oTable}_${field}`;
+                        
+                        /*switch segun type de objeto*/
+                        switch (tipo.toLowerCase()) {
+                            case 'text':                            /*se crea input:text*/
+                                elementSearch = $('<input></input>');
+                                elementSearch.attr('type','text');
+                                elementSearch.attr('id',`f1_${oSettings.oTable}_${field}`);
+                                elementSearch.addClass('form-control filter1');
+                                elementSearch.attr('field',field);
+                                elementSearch.keypress(function(tecla) {
+                                    if (tecla.keyCode === 13) {
+                                        _private.executeFilter(oSettings);
+                                    }
+                                });
+
+                                cont = $('<label></label>');
+                                cont.css({display: 'block'});       /*para que ocupe todo el <th>*/
+                                cont.html(elementSearch);
+                                
+                                
+                                $('#'+idTH).find('div').html(cont);
+                                
+                                /*agregando el operador*/
+                                _private.addIconFilter(field,oSettings,tipo,operator);
+                                break;
+                            case 'date':                            /*se crea input:text, con datepicker*/
+                                _private.ifDatePicker = true;
+
+                                elementSearch = $('<input></input>');
+                                elementSearch.addClass('datepickerGrid');
+                                elementSearch.attr('type','text');
+                                elementSearch.attr('id',`f1_${oSettings.oTable}_${field}`);
+                                elementSearch.addClass('form-control filter1');
+                                elementSearch.attr('field',field);
+                                elementSearch.keypress(function(tecla) {
+                                    if (tecla.keyCode === 13) {
+                                        _private.executeFilter(oSettings);
+                                    }
+                                });
+                                elementSearch.change(function() {
+                                    _private.executeFilter(oSettings);
+                                });
+                                
+                                icon = $('<label></label>');
+                                icon.attr('for',idField);
+                                icon.attr('class','glyphicon glyphicon-calendar');
+
+                                cont = $('<div></div>');
+                                cont.addClass('icon-addon addon-md');                      /*para los iconos*/
+                                cont.html(elementSearch);
+                                cont.append(icon);
+                                
+                                $('#'+idTH).find('div').html(cont);
+                                
+                                /*agregando el operador*/
+                                _private.addIconFilter(field,oSettings,tipo,operator);
+                                break;
+                            case 'time':                        /*se crea input:text, con clockpicker*/
+                                _private.ifTimePicker = true;
+
+                                elementSearch = $('<input></input>');
+                                elementSearch.addClass('timepickerGrid');
+                                elementSearch.attr('type','text');
+                                elementSearch.attr('id',`f1_${oSettings.oTable}_${field}`);
+                                elementSearch.addClass('form-control filter1');
+                                elementSearch.attr('field',field);
+                                elementSearch.keypress(function(tecla) {
+                                    if (tecla.keyCode === 13) {
+                                        _private.executeFilter(oSettings);
+                                    }
+                                });
+                                elementSearch.change(function() {
+                                    _private.executeFilter(oSettings);
+                                });
+                                
+                                icon = $('<label></label>');
+                                icon.attr('for',idField);
+                                icon.attr('class','glyphicon glyphicon-time');
+
+                                cont = $('<div></div>');
+                                cont.addClass('icon-addon addon-md');                      /*para los iconos*/
+                                cont.html(elementSearch);
+                                cont.append(icon);
+                                
+                                $('#'+idTH).find('div').html(cont);
+                                
+                                /*agregando el operador*/
+                                _private.addIconFilter(field,oSettings,tipo,operator);
+                                break;
+                            case 'select':                      /*se crea <select>*/
+                                var url         = (search.ajaxData !== undefined) ? search.ajaxData : null; /*para data de combo*/
+                                var options     = (search.options !== undefined) ? search.options : [];          /*campos para select*/
+                                var dataClient  = (search.dataClient !== undefined) ? search.dataClient : [];          /*data desde el cliente*/
+                                var flag        = (search.flag !== undefined) ? search.flag : '';
+
+                                if(options.length === 0){
+                                    alert('[options] No definido, defina [options].');
+                                }
+                                
+                                if(url !== null){                    /*datos desde el servidor*/
+                                    var data_s;
+                                    var promise = $.ajax({
+                                                    type: "POST",
+                                                    url: url,
+                                                    dataType: 'json',
+                                                    data:{_flag: flag, _field: field, _options: options},       /*se envia configuracion de <select> porq la llamada es multiple*/
+                                                    success: function(resp) {
+                                                        data_s = resp;
+                                                    }
+                                                });
+                                    /*promesa se ejecuta a la respuesta del server*/
+                                    promise.done(function(){
+                                        elementSearch = $('<select></select>');
+                                        elementSearch.attr('id',`f1_${oSettings.oTable}_${data_s.field}`);
+                                        elementSearch.addClass('form-control filter1');
+                                        elementSearch.attr('field',data_s.field);
+                                        elementSearch.change(function() {
+                                            _private.executeFilter(oSettings);
+                                        });
+                                
+                                        /*options*/
+                                        var opt = $('<option></option>');
+                                        opt.attr('value', '');
+                                        opt.html('-Todos-');
+
+                                        elementSearch.append(opt);
+                                        
+                                        var oopp = '';
+                                        $.each(data_s.dataServer,function(x,v) {
+                                            oopp += `<option value="${v[data_s.opt.value]}">${v[data_s.opt.label]}</option>`;
+                                        });
+                                        
+                                        elementSearch.append(oopp);
+                                        
+                                        cont = $('<label></label>');
+                                        cont.css({display: 'block'});       /*para que ocupe todo el <th>*/
+                                        cont.html(elementSearch);
+
+                                        /*data retorna del server, se debe insertar en <th> con html()*/
+                                        $(`#th_cont_search_${oSettings.oTable}_${data_s.field}`).find('div').html(cont);
+                                        
+                                        /*guardando data para el filtro 2*/
+                                        var indice = oSettings.oTable+'_'+data_s.field;
+                                        eval(`_private.dataSelect.push({${indice}: '${oopp}'});`);
+                                        
+                                        /*agregando el operador*/
+                                        _private.addIconFilter(data_s.field,oSettings,'select',operator);
+                                    });
+                                }else if(dataClient.length > 0 && dataClient instanceof Object){    /*datos desde el cliente*/
+                                    cont = $('<label></label>');
+                                    cont.css({display: 'block'});       /*para que ocupe todo el <th>*/
+
+                                    elementSearch = $('<select></select>');
+
+                                    /*options*/
+                                    var opt = $('<option></option>');
+                                    opt.attr('value', '');
+                                    opt.html('-Todos-');
+
+                                    elementSearch.append(opt);
+                                    elementSearch.attr('id',`f1_${oSettings.oTable}_${field}`);
+                                    elementSearch.addClass('form-control filter1');
+                                    elementSearch.attr('field',field);
+                                    elementSearch.change(function() {
+                                        _private.executeFilter(oSettings);
+                                    });
+                                        
+                                    var oopp = '';
+                                    $.each(dataClient,function(x,v) {
+                                        oopp += `<option value="${v.value}">${v.etiqueta}</option>`;
+                                    });
+                                    elementSearch.append(oopp);
+
+                                    cont.html(elementSearch);
+                                    $('#'+idTH).find('div').html(cont);
+                                  
+                                    /*guardando data para el filtro 2*/
+                                    var indice = oSettings.oTable+'_'+field;
+                                    eval(`_private.dataSelect.push({${indice}: '${oopp}'});`);
+                                        
+                                    /*agregando el operador*/
+                                    _private.addIconFilter(field,oSettings,tipo,operator);
+                                }
+                                break;
+                        }
+                    }
+                });
+                
+                /*verificar si se aplica datepicker*/
+                if(_private.ifDatePicker){
+                    $('.datepickerGrid').datepicker({
+                        prevText: '<i class="fa fa-chevron-left"></i>',
+                        nextText: '<i class="fa fa-chevron-right"></i>',
+                        changeMonth: true,
+                        changeYear: true,
+                        dateFormat: 'dd-mm-yy'
+                    });
+                    $('.datepickerGrid').mask('99-99-9999');
+                }
+
+                /*verificar si se aplica clockpicker*/
+                if(_private.ifTimePicker){
+                    $('.timepickerGrid').clockpicker({
+                        autoclose: true
+                    });
+                    $('.timepickerGrid').mask('99:99');
+                }
+            };
+            
+            /*
              * Crea la cabecera de la tabla
              * @param {type} oSettings
              * @returns {undefined}
@@ -424,20 +986,19 @@
                     let width = (v.width !== undefined) ? v.width + oSettings.tWidthFormat : '';
                     let search = (v.filter !== undefined) ? v.filter : false;   /*para activar busqueda de columnas*/
 
-                    th.attr('id', oSettings.oTable + '_head_th_' + c);
+                    th.attr('id', `${oSettings.oTable}_head_th_${c}`);
                     th.attr('class', 'text-center');        /*agregado class css*/
                     th.css({width: width, 'vertical-align': 'middle'});                                          /*agregando width de columna*/
                     th.append(title);                                                 /*se agrega el titulo*/
                     th.attr('data-order', field);
-                    th.addClass('col_' + field + oSettings.oTable);                                      /*para tShowHideColumn*/
+                    th.addClass(`col_${field}${oSettings.oTable}`);                                      /*para tShowHideColumn*/
 
                     /*agregando css para sortable*/
                     if (sortable !== '') {
                         th.addClass(sortable);
 
                         th.click(function () {
-                            alert('sortable')
-                            //_private.executeSorting(this,oSettings);
+                            _private.executeSorting(this,oSettings);
                         });
                     }
                     /*verificar si se inicio ordenamiento y agegar class a th*/
@@ -446,6 +1007,7 @@
                     if (cad[0] === field) {
                         th.removeClass(sortable);
                         th.addClass('sorting_' + cad[1].toLowerCase());
+                        _private.thTMP = $(th).attr('id');  //se carga tmp para manejo de css sortable
                     }
 
                     if (search instanceof Object) {    /*se verifica si existe busquedas por columnas*/
@@ -481,8 +1043,7 @@
 
                 /*agregando filtros a <tr>*/
                 if (_private.ifSearch) {
-                    alert('agegar busqueda')
-                    //_private.addSearchCols(oSettings);      /*se agrega elementos de busquedas al <tr>*/ 
+                    _private.addSearchCols(oSettings);      /*se agrega elementos de busquedas al <tr>*/ 
                 }
 
             };
@@ -502,7 +1063,7 @@
             _private.selectChange = function (oSettings) {
                 oSettings.pDisplayStart = 1;
                 oSettings.pDisplayLength = $(`#${oSettings.oTable}_cbLength`).val();
-                //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                oSettings.pFilterCols = _private.prepareFilters(oSettings); 
                 _private.sendAjax(oSettings);
             };
 
@@ -674,8 +1235,12 @@
                     let n = 1;
                     _private.colspanRecords++; /*colspan para msn: no se encontraron registros*/
 
-                    if (oSettings.pDisplayStart > 1) {
+                    if ((oSettings.pDisplayStart > 1 && _private.sgbd == 'sql')) {
                         n = (oSettings.pDisplayStart * oSettings.pDisplayLength) - (oSettings.pDisplayLength - 1);
+                    }
+              
+                    if ((oSettings.pDisplayStart > 0 && _private.sgbd == 'mysql')) {
+                        n = ((oSettings.pDisplayStart + 1) * oSettings.pDisplayLength) - (oSettings.pDisplayLength - 1);
                     }
 
                     return n;
@@ -747,7 +1312,7 @@
                     let titulo = (v.title !== undefined) ? v.title : '';
                     let icono = (v.icon !== undefined) ? v.icon : '';
                     let klass = (v.class !== undefined) ? v.class : '';
-                    let fnCallback = (v.fnCallback !== undefined) ? v.fnCallback : '';
+                    let fnReplace = (v.fnReplace !== undefined) ? v.fnReplace : '';
 
                     /*parametros para ajax*/
                     let ajax = (v.ajax !== undefined) ? v.ajax : '';       /*ajax para <td>*/
@@ -816,10 +1381,10 @@
                                     break;
                             }
 
-                            /*verificar si tiene fnCallback configurado*/
-                            if (fnCallback !== undefined && fnCallback instanceof Object) {
+                            /*verificar si tiene fnReplace configurado*/
+                            if (fnReplace !== undefined && fnReplace instanceof Object) {
                                 //                      indice -- data
-                                var call = fnCallback(obj.iax, obj.d[obj.iax]);       /*se ejecuta fnCallback*/
+                                var call = fnReplace(obj.iax, obj.d[obj.iax]);       /*se ejecuta fnReplace*/
                                 if (!call) {
                                     //call es false, <td> sigue con su contenido original
                                 } else {
@@ -1030,23 +1595,23 @@
                     serverValues: ['sexo','persona'],
                     clientValues: ['qwerty',123],
                     attrServerValues: ['sexso','persona'],
-                    fnCallback:function(){} 
+                    fnReplace::function(){} 
                 },
              */
             _private.createCheckbox = function(oSettings, data, r) {
                 let clientValues = (oSettings.sCheckbox.clientValues !== undefined) ? oSettings.sCheckbox.clientValues : '';    /*parametros del cliente*/
                 let serverValues = (oSettings.sCheckbox.serverValues !== undefined) ? oSettings.sCheckbox.serverValues : '';    /*parametros del servidor*/
                 let attrServerValues = (oSettings.sCheckbox.attrServerValues !== undefined) ? oSettings.sCheckbox.attrServerValues : '';    /*parametros del servidor como atributos*/
-                let fnCallback = (oSettings.sCheckbox.fnCallback !== undefined) ? oSettings.sCheckbox.fnCallback : '';
+                let fnReplace = (oSettings.sCheckbox.fnReplace !== undefined) ? oSettings.sCheckbox.fnReplace : '';
                 let xvalues = '', attrValues = '';
 
-                if (clientValues !== '') {
-                    /*parametros de cliente*/
-                    xvalues += _private.valuesClient(clientValues, data[r]);
-                }
                 if (serverValues !== '') {
                     /*parametros de servidor*/
                     xvalues += _private.valuesServer(serverValues, data[r]);
+                }
+                if (clientValues !== '') {
+                    /*parametros de cliente*/
+                    xvalues += _private.valuesClient(clientValues, data[r]);
                 }
                 xvalues = xvalues.substring(0, xvalues.length - 1);
 
@@ -1058,12 +1623,12 @@
                 let td = $('<td></td>');
                 td.attr('class', 'text-center');
                 
-                if(fnCallback === ''){
+                if(fnReplace === ''){
                     td.html(`<input id="${oSettings.oTable}_chk_${r}" name="${oSettings.oTable}_chk[]" type="checkbox" value="${xvalues}" ${attrValues} class="chkG">`);
                 }else{
-                    /*verificar si tiene fnCallback configurado*/
-                    if(fnCallback !== undefined && fnCallback instanceof Object){
-                        let call = fnCallback(r,data[r]);       /*se ejecuta fnCallback*/
+                    /*verificar si tiene fnReplace configurado*/
+                    if(fnReplace !== undefined && fnReplace instanceof Object){
+                        let call = fnReplace(r,data[r]);       /*se ejecuta fnReplace*/
                         if(!call){
                             //call es false, <td> sigue con su contenido original
                         }else{
@@ -1242,7 +1807,7 @@
                             let klass       = (v.class !== undefined) ? v.class : '';     /*clase css para <td>*/
                             let field       = (v.field !== undefined) ? data[index][v.field] : '[field] no definido.';
                             let kfield      = (v.field !== undefined) ? v.field : '[field] no definido.';
-                            let fnCallback  = (v.fnCallback !== undefined) ? v.fnCallback : '';     /*closure css para <td>*/
+                            let fnReplace  = (v.fnReplace !== undefined) ? v.fnReplace : '';     /*closure css para <td>*/
                             let totalizer   = (v.totalizer !== undefined && v.totalizer) ? v.totalizer : false;
                             
                             /*parametros para ajax*/
@@ -1305,9 +1870,9 @@
                             td.attr({width:width});
                             td.css({'vertical-align':valign});
                             
-                            /*verificar si tiene fnCallback configurado*/
-                            if(fnCallback !== undefined && fnCallback instanceof Object){
-                                var call = fnCallback(index,data[index]);       /*se ejecuta fnCallback*/
+                            /*verificar si tiene fnReplace configurado*/
+                            if(fnReplace !== undefined && fnReplace instanceof Object){
+                                var call = fnReplace(index,data[index]);       /*se ejecuta fnReplace*/
                                 if(!call){
                                     //call es false, <td> sigue con su contenido original
                                 }else{
@@ -1363,7 +1928,7 @@
                     aFirst.click(function() {
                         $(this).off('click');
                         oSettings.pDisplayStart = (_private.sgbd == 'sql')?1:0;
-                     //   oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                        oSettings.pFilterCols = _private.prepareFilters(oSettings); 
                         _private.sendAjax(oSettings); 
                     });
                 }
@@ -1387,7 +1952,7 @@
                     aPrev.click(function() {
                         $(this).off('click');
                         oSettings.pDisplayStart = (_private.sgbd == 'sql')?pagActual-1:pagActual-2;//mysql pagActual - 2
-                        //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                        oSettings.pFilterCols = _private.prepareFilters(oSettings); 
                         _private.sendAjax(oSettings); 
                     });
                 }
@@ -1419,7 +1984,7 @@
                     aNext.click(function() {
                         $(this).off('click');
                         oSettings.pDisplayStart = pagActual; //EN SQL SERVER SE DEBE CHEQUEAR ESTA LINEA, PORQUE AL PARECER ES + 1
-                        //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                        oSettings.pFilterCols = _private.prepareFilters(oSettings); 
                         _private.sendAjax(oSettings); 
                     });
                 }
@@ -1446,7 +2011,7 @@
                 if (numPaginas > 1 && pagActual !== numPaginas) {
                     aLast.click(function() {
                         $(this).off('click');
-                        //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                        oSettings.pFilterCols = _private.prepareFilters(oSettings); 
                         _private.sendAjax(oSettings); 
                     });
                 }
@@ -1560,21 +2125,38 @@
                             if (!activo) {
                                 $(this).find('a').click(function() {
                                     oSettings.pDisplayStart = (_private.sgbd == 'sql')?numero : numero - 1;
-                                    //oSettings.pFilterCols = _private.prepareFilters(oSettings); FALTA
+                                    oSettings.pFilterCols = _private.prepareFilters(oSettings); 
                                     _private.sendAjax(oSettings);
                                 });
                             } else {
                                 /*agregando evento a boton actualizar, enviando el nuemro activo de pagina*/
                                 $(`#btnRefresh_${oSettings.oTable}`).off('click');
                                 $(`#btnRefresh_${oSettings.oTable}`).click(function() {
-                                    oSettings.pDisplayStart = (_private.sgbd == 'sql')?numero : numero - 1;                               
-                                   // _private.executeFilter(oSettings);      /*al actuaizar debe mandar los filtros*/ FALTA
+                                    oSettings.pDisplayStart = (_private.sgbd == 'sql')?numero : numero - 1;  
+                                    oSettings.pFilterCols = _private.prepareFilters(oSettings);
                                    _private.sendAjax(oSettings);
                                 });
                             }
                         }
                     });
                 }
+            };
+            
+            /*
+             * Ocultar eventos del grid
+             * @returns {undefined}
+             */
+            _private.hideAttrGrid = function(oSettings){
+                let collection = $(`#${oSettings.oTable}`).find("button, a, span, #"+oSettings.oTable+"_chkall_0 input:checkbox");
+                $.each(collection, function () {
+                    /*obtener evento*/
+                    let onclick = $(this).attr('onclick');
+                    /*asignar evento*/
+                    $(this).click(function () {
+                        eval(onclick);
+                    });
+                    $(this).attr('onclick', null);
+                });
             };
 
             /*
@@ -1645,6 +2227,10 @@
                             var callback = oSettings.fnCallback;
                             callback(oSettings);
                         }
+                        
+                        /*oculto lo eventos de la grilla: button, a, chk_all, span*/
+                        _private.hideAttrGrid(oSettings);
+                        
                     }
                 }).fail( function() {
                     //alert( 'Error!!' );
@@ -1682,6 +2268,22 @@
                         /*se valida se data sera via ajax*/
                         if (oSettings.ajaxSource) {
                             _private.sendAjax(oSettings);
+                        }
+                        
+                        /*para ocultar filtros avanzados al dar click en document*/
+                        if(_private.fieldsHide.length){
+                            $(document).click(function(a) {
+                                $.each(_private.fieldsHide,function(i,v){
+                                    var filterParent = $(a.target).parent().attr('data-filter');    /*cuando es un date*/
+                                    if(v !== $(a.target).attr('data-filter') && v !== filterParent && v){
+                                        $(`#cont_filter_${oSettings.oTable}_${v}`).css({display: 'none'});
+                                    }
+                                });
+                                
+                                if($(a.target).attr('data-filter') !== 'hs_cols'){
+                                    $('#contvo_'+oSettings.oTable).css({display: 'none'});
+                                }
+                            });
                         }
                     }
 
