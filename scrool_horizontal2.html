@@ -1,0 +1,256 @@
+
+
+
+
+<html>
+
+<head>
+<style>
+
+
+body {
+	background: cornsilk; 
+	text-align: center; 
+}
+table {
+	margin: auto; 
+	border-collapse: collapse;
+	background-color: silver; 
+}
+thead
+{
+	display: block;
+	width: 500px;
+	overflow: auto;
+	color: #fff;
+}
+thead tr:nth-child(1) td{
+	text-align: center; 
+}
+
+tbody
+{
+	display: block;
+	width: 500px;
+	height: 100px;
+	background: orange;
+	overflow-y: scroll;
+	overflow-x: hidden;
+}
+
+td {
+	text-align: left; 
+	border: 1px solid #fff;
+}
+td:first-of-type , tr:first-of-type td {
+	padding:3px;
+	width: 120px; 
+	text-align: left; 
+}
+td:first-of-type {
+	text-align: left; 
+}
+
+input {
+	margin: 0 0; 
+	/*background-color: dimgrey; 
+	box-shadow: inset 0 0 1em 1em dimgrey; */
+	padding: .03em 0; 
+	outline: none; 
+}
+
+.grab {
+	cursor: grab; cursor: -webkit-grab; 
+}
+.grabbing {
+	cursor: grabbing; cursor: -webkit-grabbing; 
+}
+</style>
+
+<script>
+
+onload = inicia; 
+
+var laTabla, totalFilas, elContenido=[]; 
+
+var misColumnas = 5; 
+
+function inicia() {
+  laTabla = document.querySelector("table"); 
+  lasFilas = laTabla.querySelectorAll("tr"); 
+  totalFilas = lasFilas.length; 
+  totalColumnas = lasFilas[0].querySelectorAll("td"); 
+
+  for(r=0; r<totalFilas; r++) {
+    
+    elContenido[r] = []; 
+    
+    for(d=0; d<totalColumnas.length; d++) {
+      elContenido[r][d] = lasFilas[r].querySelectorAll("td")[d].innerHTML;
+    }
+  }
+
+
+  var nuevaTabla = ""; 
+  
+  for(r=0; r<totalFilas; r++) {
+	
+	if(r == 0){
+		nuevaTabla += "<thead>";
+	}
+    nuevaTabla += "<tr>"; 
+  
+    for(d=0; d<misColumnas; d++) {
+      nuevaTabla += "<td></td>";
+    }
+  
+    nuevaTabla += "</tr>"; 
+	
+	if(r == 0){
+		nuevaTabla += "</thead>";
+	}
+  }
+  
+  laTabla.innerHTML = nuevaTabla; 
+  
+    for(t=0; t<totalFilas; t++) {
+      laTabla.querySelectorAll("tr")[t].querySelector("td").innerHTML = elContenido[t][0]; 
+    }
+  
+  llenaTabla(0); 
+  
+  document.querySelector("input").style.width = laTabla.offsetWidth+"px"; 
+  document.querySelector("input").max = (totalColumnas.length - misColumnas); 
+  document.querySelector("input").value = 0; 
+}
+
+
+
+function llenaTabla(muestra) {
+  for(f=0; f<totalFilas; f++) {
+    for(c=1; c<misColumnas; c++) {
+      laTabla.querySelectorAll("tr")[f].querySelectorAll("td")[c].innerHTML = elContenido[f][+muestra+c]; 
+    }
+  }
+}
+
+</script>
+</head>
+
+<body onunload="onload()">
+
+<table>
+
+<tr>
+<td>...</td>
+<td>A</td>
+<td>B</td>
+<td>C</td>
+<td>D</td>
+<td>E</td>
+<td>F</td>
+<td>G</td>
+<td>H</td>
+<td>I</td>
+<td>J</td>
+</tr>
+
+<tr>
+<td>Animales</td>
+<td>Ardilla</td>
+<td>Bisonte</td>
+<td>Canguro</td>
+<td>Delfín</td>
+<td>Escon</td>
+<td>Flamenco</td>
+<td>Guacamayo</td>
+<td>Hitamo</td>
+<td>Iguana</td>
+<td>Jerbo</td>
+</tr>
+<tr>
+<td>Capitales</td>
+<td>Ankara</td>
+<td>Buenos Aires</td>
+<td>Copenhague</td>
+<td>Damasco</td>
+<td>Estocolmo</td>
+<td>Freetown</td>
+<td>Georgetown</td>
+<td>Helsinki</td>
+<td>Islamabad</td>
+<td>Jartum</td>
+</tr>
+<tr>
+<td>Varios</td>
+<td>Aldaba</td>
+<td>Bolígrafo</td>
+<td>Cantimplora</td>
+<td>Dedal</td>
+<td>xxxx</td>
+<td>Filigrana</td>
+<td>Gineceo</td>
+<td>xxxx</td>
+<td>Isla</td>
+<td>Juguete</td>
+</tr>
+<tr>
+<td>Varios</td>
+<td>Aldaba</td>
+<td>Bolígrafo</td>
+<td>Cantimplora</td>
+<td>Dedal</td>
+<td>xxxx</td>
+<td>Filigrana</td>
+<td>Gineceo</td>
+<td>xxxx</td>
+<td>Isla</td>
+<td>Juguete</td>
+</tr>
+<tr>
+<td>Varios</td>
+<td>Aldaba</td>
+<td>Bolígrafo</td>
+<td>Cantimplora</td>
+<td>Dedal</td>
+<td>xxxx</td>
+<td>Filigrana</td>
+<td>Gineceo</td>
+<td>xxxx</td>
+<td>Isla</td>
+<td>Juguete</td>
+</tr>
+<tr>
+<td>Varios</td>
+<td>Aldaba</td>
+<td>Bolígrafo</td>
+<td>Cantimplora</td>
+<td>Dedal</td>
+<td>xxxx</td>
+<td>Filigrana</td>
+<td>Gineceo</td>
+<td>xxxx</td>
+<td>Isla</td>
+<td>Juguete</td>
+</tr>
+<tr>
+<td>Varios</td>
+<td>Aldaba</td>
+<td>Bolígrafo</td>
+<td>Cantimplora</td>
+<td>Dedal</td>
+<td>xxxx</td>
+<td>Filigrana</td>
+<td>Gineceo</td>
+<td>xxxx</td>
+<td>Isla</td>
+<td>Juguete</td>
+</tr>
+
+</table>
+
+<input type="range" min="0" max="" step="1" class="grab"
+onchange="llenaTabla(this.value)" oninput="llenaTabla(this.value)" 
+onmousedown="this.className='grabbing'" onmouseup="this.className='grab'">
+</body>
+</html>
